@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.6 – 2026-11-04
+
+### Fixes
+* Modes app: the mode icons are set up in the same order as the tiles' icons (entity and icon first, then shown), for icon sets
+  that read them when the icon appears.
+
 ## 1.5.5 – 2026-11-04
 
 ### Fixes

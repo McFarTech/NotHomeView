@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.5';
+const HV_VERSION = '1.5.6';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6336,8 +6336,10 @@ HVHubCard.prototype._openModes = function (a) {
       const nm = nameOf(m, st), sub = un ? 'Unavailable' : TOG.test(m.entity) ? (on ? 'On' : 'Off') : d === 'script' ? 'Run' : 'Activate';
       b.querySelector('.mn').textContent = nm; b.querySelector('.ms').textContent = sub; b.setAttribute('aria-label', nm + ', ' + sub);
       const box = b.querySelector('.mi'), ic = icOf(m, st); let el = box.firstElementChild;
-      if (!el || el._hvIc !== ic || !!st !== el.localName.endsWith('state-icon')) { el = document.createElement(st ? 'ha-state-icon' : 'ha-icon'); el._hvIc = ic; box.replaceChildren(el); }
-      if (st) { el.hass = H; el.stateObj = st; } el.icon = ic; }); };
+      // same order as the tiles: hass, stateObj and icon are set before the icon goes on the page (icon sets read them when it connects)
+      if (!el || el._hvIc !== ic || !!st !== el.localName.endsWith('state-icon')) { el = document.createElement(st ? 'ha-state-icon' : 'ha-icon'); el._hvIc = ic;
+        if (st) { el.hass = H; el.stateObj = st; } el.icon = ic; box.replaceChildren(el); }
+      else { if (st) { el.hass = H; el.stateObj = st; } if (el.icon !== ic) el.icon = ic; } }); };
   g.addEventListener('click', async e => { const b = e.composedPath().find(n => n.classList && n.classList.contains('mb')); if (!b) return; const i = Number(b.dataset.i), m = list[i], H = this._hass, st = H.states[m.entity]; if (!m || busy.has(i)) return;
     const d = m.entity.split('.')[0]; busy.add(i); paint(); if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
     try { if (TOG.test(m.entity)) { const turnOn = !(st && st.state === 'on');
