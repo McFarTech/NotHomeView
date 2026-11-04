@@ -193,6 +193,25 @@ The dialog is **never** shown to non-admin users, on wall tablets / kiosk screen
 Fully Kiosk, Wallpanel running), or when a NotHomeView dashboard already exists (any dashboard named NotHomeView, or any
 dashboard that already uses the Home Screen or Page Grid card).
 
+**Modes app (Home / Away / Sleep …).** Add an app to the Home Screen card with *What it does: Modes* and pick your mode switches;
+tapping the app opens a sheet with one big button per mode, lit while it's on:
+
+```yaml
+apps:
+  - name: Modes
+    icon: mdi:home-switch-outline
+    color_from: '#b9a6ff'
+    color_to: '#6a4bd8'
+    kind: modes
+    exclusive: true            # optional: turning one on turns the others off
+    modes:
+      - input_boolean.home
+      - entity: input_boolean.nothome
+        name: Away
+      - input_boolean.sleep
+      - input_boolean.ellie
+```
+
 **Energy and power on an appliance tile.** Give the Entity tile a `details:` list and each entity gets its own line under the state:
 
 ```yaml

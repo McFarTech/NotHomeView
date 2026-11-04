@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.2';
+const HV_VERSION = '1.5.3';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -5980,6 +5980,7 @@ class HVHubCard extends HTMLElement {
       fire(this, 'll-custom', { action: 'fire-dom-event', browser_mod: { service: 'browser_mod.popup', data } }); return; }
     if (kind === 'weather') { this._openWeather(a.weather_entity); return; }
     if (kind === 'assistant') { this._openAssist(); return; }
+    if (kind === 'modes') { this._openModes(a); return; }
     if (kind === 'photos') { this._openPhoto(); return; }
     const cfg = a.tap_action; if (cfg && cfg.action !== 'none') fire(this, 'hass-action', { config: { entity: a.entity, tap_action: cfg }, action: 'tap' }); }
   _personTap() { const p = this._person(); if (p) fire(this, 'hass-more-info', { entityId: p.entity_id }); }
@@ -6293,6 +6294,47 @@ class HVHubCard extends HTMLElement {
     this._openSheet({ label: 'Weather', bg: '#1d3b66', day: false, build: bd => { bd.style.padding = '0'; bd.style.overflow = 'hidden'; host.classList.add('in'); bd.appendChild(host); return { set hass(v) { paint(); } }; },
       onClose: () => { clearInterval(tick); subs.forEach(u => Promise.resolve(u).then(f => f && f()).catch(() => {})); } }); }
 }
+/* 1.5.3: Modes app. A sheet with one big glass button per mode (input_boolean / switch: on-off; scene / script: run), lit while on.
+   modes: [{ entity, name, icon }] (or plain entity ids); exclusive: true = turning one on turns the other on/off modes off. */
+const HV_MODE_ICON = n => /sleep|night|bed/.test(n) ? 'mdi:power-sleep' : /not_?home|away|out|vacation|holiday/.test(n) ? 'mdi:home-export-outline' : /home/.test(n) ? 'mdi:home-heart' : /guest|sitter/.test(n) ? 'mdi:account-heart' : 'mdi:account-star';
+const HV_MODES_CSS = `:host{display:block;font-family:${FONT};color:var(--hv-text,#fff)}
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(160px,40vw),1fr));gap:14px;width:min(100%,800px);margin:8px auto 0}
+.mb{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:min(190px,34vw);padding:18px 12px;border-radius:28px;text-align:center;
+ background:var(--hv-bg,linear-gradient(150deg,rgba(255,255,255,.15) 0%,rgba(255,255,255,.07) 100%));border:1px solid var(--hv-border,rgba(255,255,255,.25));box-shadow:var(--hv-shadow,0 8px 24px rgba(0,0,30,.18));
+ backdrop-filter:var(--hv-blur,blur(24px) saturate(160%));-webkit-backdrop-filter:var(--hv-blur,blur(24px) saturate(160%));transition:transform .12s ease,background .25s ease;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.mb:active{transform:scale(.97)} .mb:focus-visible{outline:2px solid var(--hv-accent,#d4c9ff);outline-offset:2px}
+.mb.on{background:var(--hv-bg-on,linear-gradient(150deg,rgba(196,182,255,.55) 0%,rgba(160,140,250,.4) 100%));border-color:var(--hv-border-on,rgba(225,215,255,.5))}
+.mb.busy{opacity:.6} .mb.un{opacity:.45}
+.mi{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14)} .mb.on .mi{background:rgba(255,255,255,.92);color:#5b3fc4}
+.mi ha-icon{--mdc-icon-size:34px;display:flex}
+.mn{font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--hv-text,#fff)} .mb.on .mn{color:var(--hv-text-on,#fff)}
+.ms{font-size:14px;font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))} .mb.on .ms{color:var(--hv-text2-on,rgba(255,255,255,.85))}
+.em{opacity:.7;text-align:center;padding:30px}
+:host([day]) .mb{background:#fff;border-color:rgba(0,0,0,.06);box-shadow:0 6px 18px rgba(30,30,60,.08)} :host([day]) .mn{color:#1c1c1e} :host([day]) .ms{color:rgba(60,60,67,.7)}
+:host([day]) .mi{background:rgba(120,120,128,.12);color:#3c3c43} :host([day]) .mb.on{background:linear-gradient(150deg,#8f7bff,#5b3fc4);border-color:transparent} :host([day]) .mb.on .mn{color:#fff} :host([day]) .mb.on .ms{color:rgba(255,255,255,.85)}`;
+HVHubCard.prototype._openModes = function (a) {
+  if (this._sheetO) return; const list = [].concat(a.modes || []).map(m => typeof m === 'string' ? { entity: m } : m).filter(m => m && m.entity);
+  const day = hvMode(this._config.theme, this._hass) === 'day', host = document.createElement('homeview-modes'), sr = host.attachShadow({ mode: 'open' }); host.toggleAttribute('day', day);
+  const TOG = /^(input_boolean|switch|light|fan)\./, busy = new Set();
+  const nameOf = (m, st) => m.name || (st && st.attributes.friendly_name) || m.entity.split('.')[1].replace(/_/g, ' ');
+  sr.innerHTML = `<style>${HV_MODES_CSS}</style><div class="mg" role="group" aria-label="${esc(a.name || 'Modes')}"></div>`; const g = sr.querySelector('.mg');
+  const paint = () => { const H = this._hass;
+    if (!list.length) { g.innerHTML = '<div class="em">Add modes to this app in the Home Screen card editor (Apps → this app → Modes).</div>'; return; }
+    g.innerHTML = list.map((m, i) => { const st = H.states[m.entity], d = m.entity.split('.')[0], on = !!st && TOG.test(m.entity) && st.state === 'on', un = !st || st.state === 'unavailable';
+      const ic = m.icon || (st && st.attributes.icon) || HV_MODE_ICON(m.entity.toLowerCase() + ' ' + String(nameOf(m, st)).toLowerCase());
+      const sub = un ? 'Unavailable' : TOG.test(m.entity) ? (on ? 'On' : 'Off') : d === 'script' ? 'Run' : 'Activate';
+      return `<button class="mb${on ? ' on' : ''}${un ? ' un' : ''}${busy.has(i) ? ' busy' : ''}" data-i="${i}" aria-pressed="${on}"><span class="mi"><ha-icon icon="${esc(ic)}"></ha-icon></span><span class="mn">${esc(nameOf(m, st))}</span><span class="ms">${esc(sub)}</span></button>`; }).join(''); };
+  g.addEventListener('click', async e => { const b = e.composedPath().find(n => n.classList && n.classList.contains('mb')); if (!b) return; const i = Number(b.dataset.i), m = list[i], H = this._hass, st = H.states[m.entity]; if (!m || busy.has(i)) return;
+    const d = m.entity.split('.')[0]; busy.add(i); paint(); if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
+    try { if (TOG.test(m.entity)) { const turnOn = !(st && st.state === 'on');
+        await H.callService(d, turnOn ? 'turn_on' : 'turn_off', { entity_id: m.entity });
+        if (turnOn && a.exclusive) { const off = list.filter((x, k) => k !== i && TOG.test(x.entity) && H.states[x.entity] && H.states[x.entity].state === 'on');
+          for (const x of off) await H.callService(x.entity.split('.')[0], 'turn_off', { entity_id: x.entity }); } }
+      else await H.callService(d, 'turn_on', { entity_id: m.entity }); }
+    catch (x) { hvToast('Mode not changed: ' + (x && (x.message || x.code) || x)); }
+    busy.delete(i); paint(); });
+  paint();
+  this._openSheet({ label: a.name || 'Modes', day, dayBg: '#eeeef0', build: bd => { bd.appendChild(host); return { set hass(v) { paint(); } }; } }); };
 const HUB_APP_FIELDS = {
   name: { label: 'Label', selector: { text: {} } },
   icon: { label: 'Icon (hv:home = the Home app house)', selector: { text: {} } },
@@ -6300,13 +6342,18 @@ const HUB_APP_FIELDS = {
   color_to: { label: 'Gradient bottom colour', selector: { text: {} } },
   glyph_color: { label: 'Glyph colour (empty = white)', selector: { text: {} } },
   kind: { label: 'What it does', selector: { select: { mode: 'dropdown', options: [{ value: 'navigate', label: 'Open a view' }, { value: 'now_playing', label: 'Now Playing popup' },
-    { value: 'weather', label: 'Weather popup' }, { value: 'assistant', label: 'Assistant (voice / typed)' }, { value: 'photos', label: 'Full-screen photos' }, { value: 'action', label: 'Custom tap action' }] } } },
+    { value: 'weather', label: 'Weather popup' }, { value: 'assistant', label: 'Assistant (voice / typed)' }, { value: 'photos', label: 'Full-screen photos' }, { value: 'modes', label: 'Modes (Home / Away / Sleep …)' }, { value: 'action', label: 'Custom tap action' }] } } },
   navigation_path: { label: 'View (Open a view)', selector: { navigation: {} } },
   open_as: { label: 'Open as (Open a view / Now Playing; empty = Sheet)', selector: { select: { mode: 'dropdown', options: [{ value: 'sheet', label: 'Sheet (slides up over the launch page)' }, { value: 'page', label: 'Page / classic popup' }] } } },
   entity: { label: 'Player (Now Playing) / entity (custom action)', selector: { entity: {} } },
   entities: { label: 'Other speakers to switch between (Now Playing)', selector: { entity: { domain: 'media_player', multiple: true } } },
   weather_entity: { label: 'Weather entity (Weather popup)', selector: { entity: { domain: 'weather' } } },
-  tap_action: { label: 'Tap action (Custom tap action)', selector: { ui_action: {} } } };
+  tap_action: { label: 'Tap action (Custom tap action)', selector: { ui_action: {} } },
+  modes: { label: 'Modes (Modes app): one button each', selector: { object: { multiple: true, label_field: 'name', description_field: 'entity', fields: {
+    entity: { label: 'Entity (input_boolean / switch to turn on and off, or a scene / script to run)', required: true, selector: { entity: { domain: ['input_boolean', 'switch', 'scene', 'script'] } } },
+    name: { label: 'Name (empty = the entity name, e.g. "Away" for input_boolean.nothome)', selector: { text: {} } },
+    icon: { label: 'Icon (empty = picked from the name)', selector: { icon: {} } } } } } },
+  exclusive: { label: 'Modes app: only one on at a time (turning one on turns the others off)', selector: { boolean: {} } } };
 const hubTileOpt = (c, i) => ((c && Array.isArray(c.side_tiles) ? c.side_tiles[i] : null) || {});
 const hubTileSizes = c => { const s = hubSizes(c && c.side_sizes); return Array.from({ length: Math.max(s.length, ((c && c.side_cards) || []).length) }, (_, i) => { const o = hubTileOpt(c, i); return o.size === 'big' ? 3 : o.size === 'wide' ? 2 : o.size === 'square' ? 1 : s[i] || 1; }); };
 const hubSizes = t => String(t || '').split(/[\s,;]+/).filter(Boolean).map(x => /^b/i.test(x) || x === '3' ? 3 : /^w/i.test(x) || x === '2' ? 2 : 1);

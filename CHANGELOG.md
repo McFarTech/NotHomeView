@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.3 – 2026-11-04
+
+### New features
+* **Modes app** on the Home Screen (*What it does: Modes*): a sheet with one big glass button per mode (e.g. Home, Away, Sleep, Ellie),
+  lit while it's on. input_boolean / switch modes are turned on and off; a scene or script is run. Each mode's name and icon come
+  from the entity (or set `name` / `icon`); `exclusive: true` turns the other modes off when one is turned on.
+
 ## 1.5.2 – 2026-11-04
 
 ### New features
