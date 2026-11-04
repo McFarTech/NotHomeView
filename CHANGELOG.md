@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.5.2 – 2026-11-04
+
+### New features
+* **Entity tile: Details** (`details:`): extra lines under the state, one per entity, e.g. a smart plug's energy and power on the
+  appliance's tile (*Energy 1.00 kWh* / *Power 1 W*). Each line's name is its own `name`, or the entity's name without the tile's
+  name in front ("DishWasher Energy" → "Energy"); `attribute` shows an attribute instead of the state. The icon shrinks a little to
+  make room. Visual editor: *Details (extra lines under the state)*.
+
 ## 1.5.1 – 2026-11-04
 
 ### New features
@@ -8,11 +16,6 @@
   new devices go to the end of their room page (and new lights to the room's group tile), and an area that has no page yet gets one,
   plus a tile on the Rooms page and an entry in the Rooms picker. It only adds: nothing is removed, moved or resized.
   `NotHomeView.syncRoomsDryRun()` shows what would change without saving.
-* **Entity tile: Details** (`details:`): extra lines under the state, one per entity, e.g. a smart plug's energy and power on the
-  appliance's tile (*Energy 1.00 kWh* / *Power 1 W*). Each line's name is its own `name`, or the entity's name without the tile's
-  name in front ("DishWasher Energy" → "Energy"); `attribute` shows an attribute instead of the state. The icon shrinks a little to
-  make room. Visual editor: *Details (extra lines under the state)*.
-
 ## 1.5.0 – 2026-10-31 (tag `v1.5`)
 
 This update was developed as "1.32.0" and is published as **v1.5**. Note for HACS users: HACS compares version numbers, and v1.5 counts as lower than v1.31.x, so HACS may not offer it as an update automatically; pick it under *Redownload* → version **v1.5**.
