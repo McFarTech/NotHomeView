@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.7 – 2026-11-04
+
+### Changes
+* Modes app: full-colour icons (animara and other non-mdi sets) show bigger and without the circle behind them, like on the tiles;
+  mdi icons keep the circle. `icon_style: circle | picture` on a mode overrides it.
+
 ## 1.5.6 – 2026-11-04
 
 ### Fixes
