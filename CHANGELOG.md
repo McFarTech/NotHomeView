@@ -3,7 +3,7 @@
 ## 1.5.1 – 2026-11-04
 
 ### New features
-* **Sync rooms** (Edit Button pencil menu, admins; or `NotHomeView.syncRooms()` in the browser console). The generated dashboard is a
+* **Sync rooms** (Edit Button pencil menu or the bottom of the Home Screen card editor, admins; or `NotHomeView.syncRooms()` in the browser console). The generated dashboard is a
   snapshot of your areas at setup time, so devices added to an area later never appeared on its room page. Sync rooms adds them:
   new devices go to the end of their room page (and new lights to the room's group tile), and an area that has no page yet gets one,
   plus a tile on the Rooms page and an entry in the Rooms picker. It only adds: nothing is removed, moved or resized.

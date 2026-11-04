@@ -6409,7 +6409,7 @@ class HVHubEditor extends HTMLElement {
     if (album && au && hvAlbumProv(au) && (!this._albSt || this._albSt.url !== au) && this._albQ !== au) { // check the link (debounced while typing)
       this._albQ = au; clearTimeout(this._albT); this._albT = setTimeout(() => hvAlbumLoad(this._hass, au).then(r => { if (this._albQ !== au) return; this._albSt = Object.assign({ url: au }, r); delete this._albSt.ids; this._albQ = null; this._render(); }), 700); }
     this._form.hass = this._hass; this._form.schema = hvHubSchemaAlbum(hvHubSchemaPipes(this._pipes), album); this._form.data = data;
-    hvWpHint(this, true); hvSetupEditorBtn(this); // 1.31.0: first-run setup, on demand // the Home Screen's screensaver features (swipe away, hold, Photos) need Wallpanel
+    hvWpHint(this, true); hvSetupEditorBtn(this); hvSyncEditorBtn(this); // 1.31.0: first-run setup, on demand // the Home Screen's screensaver features (swipe away, hold, Photos) need Wallpanel
     if (this._stack) { this._stack.hass = this._hass; const js = JSON.stringify(this._config.side_cards || []); if (js !== this._lastSide) { this._lastSide = js; this._stack.setConfig({ type: 'vertical-stack', cards: this._config.side_cards || [] }); } }
   }
 }
@@ -6844,3 +6844,15 @@ function hvSetupEditorBtn(ed) { if (ed.querySelector('.hv-setup-btn')) return; c
   w.style.cssText = 'margin:18px 0 4px;padding:12px 14px;border-radius:12px;border:1px solid var(--divider-color,rgba(127,127,127,.3));display:flex;align-items:center;gap:12px;justify-content:space-between';
   w.innerHTML = '<span style="font-size:14px;color:var(--secondary-text-color)">Make a new NotHomeView dashboard from your own devices (adds a dashboard; this one is not changed).</span><button style="all:unset;cursor:pointer;white-space:nowrap;padding:9px 14px;border-radius:10px;background:var(--primary-color,#4d3ad6);color:var(--text-primary-color,#fff);font-weight:600;font-size:14px">Create NotHomeView dashboard</button>';
   w.querySelector('button').addEventListener('click', () => { if (ed._hass) hvSetupDialog(ed._hass, { force: true }); }); ed.appendChild(w); }
+/* 1.5.1: Sync rooms in the Home Screen card editor (reachable in edit mode and when the Edit Button's pencil isn't on screen).
+   Home Assistant's card editor keeps its own copy of the dashboard and would write it back on Save, undoing the sync, so the
+   editor is closed first (unsaved changes to this card are dropped), then the rooms are synced and a toast says what changed. */
+function hvSyncEditorBtn(ed) { if (ed.querySelector('.hv-sync-btn')) return; const w = document.createElement('div'); w.className = 'hv-sync-btn';
+  w.style.cssText = 'margin:10px 0 4px;padding:12px 14px;border-radius:12px;border:1px solid var(--divider-color,rgba(127,127,127,.3));display:flex;align-items:center;gap:12px;justify-content:space-between';
+  w.innerHTML = '<span style="font-size:14px;color:var(--secondary-text-color)">Add devices you\'ve put in an area since this dashboard was made to their room pages (new areas get a page). Closes this editor first; nothing is removed.</span><button style="all:unset;cursor:pointer;white-space:nowrap;padding:9px 14px;border-radius:10px;background:var(--primary-color,#4d3ad6);color:var(--text-primary-color,#fff);font-weight:600;font-size:14px">Sync rooms</button>';
+  w.querySelector('button').addEventListener('click', async () => { const h = ed._hass; if (!h) return;
+    const find = (r, d) => { if (!r || d > 10) return null; for (const n of r.querySelectorAll('*')) { if (n.tagName === 'HUI-DIALOG-EDIT-CARD') return n; if (n.shadowRoot) { const x = find(n.shadowRoot, d + 1); if (x) return x; } } return null; };
+    const dlg = find(document, 0); try { if (dlg && typeof dlg.closeDialog === 'function') dlg.closeDialog(); } catch (e) {}
+    await new Promise(r => setTimeout(r, 400)); hvToast('Syncing rooms…', 'hv-sync');
+    try { const s = await hvSyncRooms(h); hvToast('Sync rooms: ' + s.text, 'hv-sync'); } catch (e) { hvToast('Rooms not synced: ' + (e && (e.message || e.code) || e), 'hv-sync'); } });
+  ed.appendChild(w); }
