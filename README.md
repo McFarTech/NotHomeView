@@ -193,6 +193,12 @@ The dialog is **never** shown to non-admin users, on wall tablets / kiosk screen
 Fully Kiosk, Wallpanel running), or when a NotHomeView dashboard already exists (any dashboard named NotHomeView, or any
 dashboard that already uses the Home Screen or Page Grid card).
 
+**Added devices to a room later?** The generated dashboard is built once from your areas. Tap the Edit Button pencil → **Sync rooms**
+(or run `NotHomeView.syncRooms()` in the console) to add new area devices to their room pages and create pages for new areas. It only adds
+tiles, so your layout stays as it is (a tile you deleted on purpose comes back if its device is still in that area). Like the setup, it skips
+unavailable, hidden and diagnostic entities, and room pages only take lights, switches, fans, climate, covers, locks, media players, cameras,
+humidifiers, vacuums, valves and water heaters.
+
 **Changed your mind?** Edit a *NotHomeView Hub* (Home Screen) card and press **Create NotHomeView dashboard** at the bottom
 of its editor, or open the browser console (F12) on any dashboard and run `NotHomeView.setup()`.
 `NotHomeView.dryRun()` returns the dashboard it would create (as JSON) without saving anything, and

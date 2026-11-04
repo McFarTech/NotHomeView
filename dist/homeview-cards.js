@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.0';
+const HV_VERSION = '1.5.1';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -1089,6 +1089,7 @@ Object.assign(HELPERS, { charging_entity: 'Shows a bolt while it is on / chargin
 // Tap = full page load of <this view>?disable_km&edit=1 -> kiosk-mode off (header back) + Lovelace edit mode. Works in browsers and the iOS/Android app.
 // 1.30.6: tap opens a small menu (Edit page + Device pages theme) unless edit_menu: false.
 const PENCIL = 'M20.71,7.04C21.1,6.65 21.1,6 20.71,5.63L18.37,3.29C18,2.9 17.35,2.9 16.96,3.29L15.12,5.12L18.87,8.87M3,17.25V21H6.75L17.81,9.93L14.06,6.18L3,17.25Z';
+const HV_SYNC_ICON = 'M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z'; // mdi:sync
 const EDIT_CSS = `
 :host{all:initial}
 button{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:center;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;
@@ -1220,8 +1221,14 @@ class HVEditButtonCard extends HTMLElement {
     m.innerHTML = `<button class="mi ed" role="menuitem"><svg viewBox="0 0 24 24"><path d="${PENCIL}"/></svg><span>Edit page</span></button><div class="sep"></div>
       <div class="hd">Device pages theme</div>
       ${opt('night', 'Night (dark glass)', 'linear-gradient(150deg,#3b3f8f,#1b1d3a)')}${opt('day', 'Day (white)', 'linear-gradient(150deg,#ffffff,#e6e6eb)')}${opt('auto', 'Auto (follow sun)', 'linear-gradient(90deg,#1b1d3a 50%,#ffffff 50%)')}
-      <div class="st${why ? '' : ''}">${esc(why || 'The Home Screen keeps its own look.')}</div>`;
+      <div class="st${why ? '' : ''}">${esc(why || 'The Home Screen keeps its own look.')}</div>
+      ${admin && lv && !yaml ? `<div class="sep"></div><button class="mi sy" role="menuitem"><svg viewBox="0 0 24 24"><path d="${HV_SYNC_ICON}"/></svg><span>Sync rooms</span></button><div class="st sys">Adds devices you've put in an area since the dashboard was made.</div>` : ''}`;
     m.querySelector('.ed').addEventListener('click', ev => this._go(ev));
+    const sy = m.querySelector('.sy'); if (sy) sy.addEventListener('click', async ev => { ev.preventDefault(); ev.stopPropagation(); const st = m.querySelector('.sys');
+      sy.disabled = true; st.className = 'st sys'; st.textContent = 'Syncing…';
+      try { const s = await hvSyncRooms(this._hass, this); st.textContent = s.text; hvToast('Sync rooms: ' + s.text); }
+      catch (e) { st.className = 'st sys err'; st.textContent = 'Not synced: ' + (e && (e.message || e.code) || e); }
+      sy.disabled = false; });
     m.querySelectorAll('.th').forEach(b => b.addEventListener('click', ev => { ev.preventDefault(); ev.stopPropagation(); this._setTheme(b.dataset.v, m); }));
     for (const t of ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'click']) m.addEventListener(t, ev => ev.stopPropagation(), { passive: t !== 'click' });
     pen.parentNode.style.position = 'relative'; pen.parentNode.appendChild(m); this._menuEl = m;
@@ -6651,6 +6658,61 @@ function hvSetupBuild(data, url) {
 const hvSetupData = async hass => { const ws = async type => { try { return await hass.callWS({ type }); } catch (e) { return null; } };
   const [e, d, a] = await Promise.all([ws('config/entity_registry/list'), ws('config/device_registry/list'), ws('config/area_registry/list')]);
   return { themes: Object.keys((hass.themes && hass.themes.themes) || {}), states: hass.states, entities: e || Object.values(hass.entities || {}), devices: d || Object.values(hass.devices || {}), areas: a || Object.values(hass.areas || {}) }; };
+/* 1.5.1: Sync rooms. The generated dashboard is a snapshot of the areas at setup time; this brings it up to date without touching
+   the layout. Only adds: devices now in an area that its room page doesn't show yet are appended to that page (and new lights to the
+   room's group tile), areas that have no page yet get one (plus a Rooms page tile and a Rooms picker entry). Nothing is removed or
+   moved. A room page is found by its generated path (room-<area id>) or, failing that, by a view titled like the area.
+   pure: (current dashboard config, setup data, url_path) -> { config, summary } */
+function hvSyncRoomsBuild(cur, data, url) {
+  const cfg = JSON.parse(JSON.stringify(cur || {})), views = cfg.views = cfg.views || [], P = p => `/${url}/${p}`;
+  const fresh = hvSetupBuild(data, url).config.views;
+  const walk = (o, f, d = 0) => { if (!o || typeof o !== 'object' || d > 16) return; if (Array.isArray(o)) { o.forEach(x => walk(x, f, d + 1)); return; } f(o);
+    for (const k of ['sections', 'cards', 'card', 'elements']) if (o[k]) walk(o[k], f, d + 1); };
+  const gridOf = v => { let g = null; walk(v, o => { if (!g && o.type === 'custom:homeview-grid-card' && Array.isArray(o.cards)) g = o; }); return g; };
+  const idsIn = o => { const s = new Set(); walk(o, x => { if (typeof x.entity === 'string') s.add(x.entity);
+    if (Array.isArray(x.entities)) x.entities.forEach(e => { const id = typeof e === 'string' ? e : e && e.entity; if (id) s.add(id); }); }); return s; };
+  const navOf = c => (c && (c.navigation_path || (c.tap_action && c.tap_action.navigation_path))) || '';
+  const low = s => String(s || '').trim().toLowerCase();
+  const freshRooms = fresh.filter(v => /^room-/.test(v.path || '')), freshRoomsPage = fresh.find(v => v.path === 'rooms');
+  const added = [], newRooms = [];
+  for (const fv of freshRooms) {
+    const fg = gridOf(fv); if (!fg) continue;
+    const ev = views.find(v => v.path === fv.path) || views.find(v => low(v.title) === low(fv.title) && gridOf(v));
+    if (!ev) { views.push(fv); newRooms.push(fv); continue; }
+    const eg = gridOf(ev); if (!eg) continue;
+    const have = idsIn(eg), add = fg.cards.filter(c => c.entity && !have.has(c.entity)).map(c => {
+      const n = Object.assign({}, c); if (eg.cards.length && n.type === 'custom:homeview-thermostat-card') n.grid_options = { columns: 3, rows: 2 }; return n; }); // no second hero
+    if (add.length) { eg.cards.push(...add); added.push({ room: ev.title || fv.title, n: add.length }); }
+    // the room's lights tile (Rooms page, Home page): add its new lights
+    const lights = fg.cards.filter(c => /^light\./.test(c.entity || '')).map(c => c.entity), paths = [P(fv.path), P(ev.path)];
+    if (lights.length) walk(views, o => { if (o.type !== 'custom:homeview-group-card' || !Array.isArray(o.entities) || !paths.includes(navOf(o))) return;
+      const h = new Set(o.entities.map(e => typeof e === 'string' ? e : e && e.entity)); for (const l of lights) if (!h.has(l)) o.entities.push(l); });
+  }
+  if (newRooms.length) {
+    let rp = views.find(v => v.path === 'rooms');
+    if (!rp && freshRoomsPage) views.push(rp = freshRoomsPage); // first rooms ever: the whole Rooms page (already lists them)
+    else if (rp) { const g = gridOf(rp), fg = freshRoomsPage && gridOf(freshRoomsPage);
+      if (g && fg) for (const r of newRooms) { const t = fg.cards.find(c => navOf(c) === P(r.path)); if (t && !g.cards.some(c => navOf(c) === P(r.path))) g.cards.push(JSON.parse(JSON.stringify(t))); } }
+    walk(views, o => { if (o.type !== 'custom:homeview-chips-card' || !Array.isArray(o.chips)) return;
+      for (const ch of o.chips) { if (!ch || !ch.room_picker) continue; ch.rooms = ch.rooms || [];
+        for (const r of newRooms) if (!ch.rooms.some(x => x && x.navigation_path === P(r.path))) ch.rooms.push({ name: r.title, icon: r.icon, navigation_path: P(r.path) }); } });
+  }
+  const tiles = added.reduce((s, a) => s + a.n, 0), parts = [];
+  if (tiles) parts.push(`Added ${tiles} tile${tiles > 1 ? 's' : ''} (${added.map(a => `${a.room} ${a.n}`).join(', ')})`);
+  if (newRooms.length) parts.push(`${newRooms.length} new room page${newRooms.length > 1 ? 's' : ''} (${newRooms.map(r => r.title).join(', ')})`);
+  return { config: cfg, changed: !!(tiles || newRooms.length), summary: { tiles, added, rooms: newRooms.map(r => r.title), text: parts.length ? parts.join(' and ') + '.' : 'Rooms are up to date.' } };
+}
+// read the dashboard + registries, sync, save (the open dashboard updates at once). el: any element on that dashboard (optional)
+async function hvSyncRooms(hass, el) {
+  if (!hass || !hass.user || hass.user.is_admin !== true) throw new Error('only an admin can sync rooms');
+  const root = el ? hvFindRoot(el) : hvFindRootDeep(), lv = root && root.lovelace;
+  if (lv && lv.mode === 'yaml') throw new Error('this dashboard is in YAML mode: edit it in the YAML');
+  const dash = (lv && lv.urlPath) || ssDash(), q = { type: 'lovelace/config', force: true }; if (dash) q.url_path = dash;
+  const cur = await hass.callWS(q), r = hvSyncRoomsBuild(cur, await hvSetupData(hass), dash || 'lovelace');
+  if (!r.changed) return r.summary;
+  if (lv && typeof lv.saveConfig === 'function' && (lv.urlPath || null) === (dash || null)) await lv.saveConfig(r.config);
+  else { const sv = { type: 'lovelace/config/save', config: r.config }; if (dash) sv.url_path = dash; await hass.callWS(sv); }
+  return r.summary; }
 // a NotHomeView dashboard is already there: one this setup made (nothome-view, nothome-view-2 ...) or one using the Home Screen card (1.31.1)
 // returns its url_path ('lovelace' for the default dashboard), false when there is none, null when the list can't be read (1.31.2)
 async function hvSetupHasDash(hass) {
@@ -6759,6 +6821,9 @@ const hvHaHass = () => { const ha = document.querySelector('home-assistant'); re
 window.NotHomeView = Object.assign(window.NotHomeView || {}, {
   setup: opts => { const h = hvHaHass(); return h ? hvSetupDialog(h, Object.assign({ force: true }, opts)) : null; },
   dryRun: async (url = 'nothome-view') => { const h = hvHaHass(); return hvSetupBuild(await hvSetupData(h), url); }, // returns the config, saves nothing
+  syncRooms: async () => { const s = await hvSyncRooms(hvHaHass()); hvToast('Sync rooms: ' + s.text); return s; }, // 1.5.1: adds new area devices to the open dashboard's room pages
+  syncRoomsDryRun: async () => { const h = hvHaHass(), root = hvFindRootDeep(), lv = root && root.lovelace, dash = (lv && lv.urlPath) || ssDash(), q = { type: 'lovelace/config', force: true }; if (dash) q.url_path = dash;
+    return hvSyncRoomsBuild(await h.callWS(q), await hvSetupData(h), dash || 'lovelace'); }, // what it would change, saves nothing
   build: hvSetupBuild,
   kiosk: () => hvSetupKiosk(hvHaHass()), // is an active kiosk mode hiding the header right now (no dialog then)
   check: () => hvSetupMaybe(hvHaHass()), // the first-run check now (shows the dialog only when it would show by itself); returns why not
