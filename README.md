@@ -193,6 +193,18 @@ The dialog is **never** shown to non-admin users, on wall tablets / kiosk screen
 Fully Kiosk, Wallpanel running), or when a NotHomeView dashboard already exists (any dashboard named NotHomeView, or any
 dashboard that already uses the Home Screen or Page Grid card).
 
+**Energy and power on an appliance tile.** Give the Entity tile a `details:` list and each entity gets its own line under the state:
+
+```yaml
+type: custom:homeview-entity-card
+entity: switch.dishwasher
+name: DishWasher
+details:
+  - sensor.dishwasher_energy          # shown as "Energy 1.00 kWh" (name = entity name minus "DishWasher")
+  - entity: sensor.dishwasher_power
+    name: Power                       # optional
+```
+
 **Added devices to a room later?** The generated dashboard is built once from your areas. Tap the Edit Button pencil → **Sync rooms**,
 or edit the Home Screen card and press **Sync rooms** at the bottom of its editor (or run `NotHomeView.syncRooms()` in the console) to add new area devices to their room pages and create pages for new areas. It only adds
 tiles, so your layout stays as it is (a tile you deleted on purpose comes back if its device is still in that area). Like the setup, it skips
@@ -307,7 +319,7 @@ The dashboard needs a Home Screen card for the pencil menu to save the theme.
 |---|---|---|---|
 | NotHomeView Thermostat | `custom:homeview-thermostat-card` | big set‑point, ± chevrons (0.5° steps), mode and current temperature | 2×3, 2×6, 4×6 (compact layout at 2 rows) |
 | NotHomeView Light | `custom:homeview-light-card` | tap toggles, shows brightness %, hold for more‑info | 2×3, 2×6, 4×6 |
-| NotHomeView Entity | `custom:homeview-entity-card` | any entity as a tile: icon, name, state or attribute | 2×3, 2×6, 4×6 |
+| NotHomeView Entity | `custom:homeview-entity-card` | any entity as a tile: icon, name, state or attribute; optional `details:` lines (e.g. energy and power) | 2×3, 2×6, 4×6 |
 | NotHomeView Group | `custom:homeview-group-card` | several lights/switches: "3 on", tap toggles all | 2×3, 2×6, 4×6 |
 | NotHomeView Scene | `custom:homeview-scene-card` | scene / script button with optional confirmation | 2×3, 2×6, 4×6 |
 | NotHomeView Garage | `custom:homeview-garage-card` | garage door / cover: open or close, with confirmation | 2×3, 2×6, 4×6 |

@@ -449,6 +449,10 @@ ha-ripple{--ha-ripple-color:var(--hv-text,#fff);--ha-ripple-hover-opacity:.04;--
 .p{font-size:min(11.5cqh,7cqw);font-weight:650;color:var(--hv-text,#fff)}
 .s{font-size:min(9.6cqh,5.9cqw);font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))}
 .active .p{color:var(--hv-text-on,#fff)} .active .s{color:var(--hv-text2-on,rgba(255,255,255,.8))}
+.d{display:flex;justify-content:center;align-items:baseline;gap:.4em;white-space:nowrap;overflow:hidden;line-height:1.25;font-size:min(8.6cqh,5.3cqw);font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))}
+.p + .d,.s + .d{margin-top:.35em} .dv{font-weight:650;color:var(--hv-text,#fff);font-variant-numeric:tabular-nums} .active .d{color:var(--hv-text2-on,rgba(255,255,255,.8))} .active .dv{color:var(--hv-text-on,#fff)}
+.c.det{gap:6px} .c.det .ic{width:min(24cqh,18cqw);height:min(24cqh,18cqw)} .c.det .ic ha-state-icon,.c.det .ic ha-icon{--mdc-icon-size:min(21cqh,16cqw);width:min(21cqh,16cqw);height:min(21cqh,16cqw)}
+:host([floor]) .d{font-size:max(10px,min(8.6cqh,7cqw))} :host([floor]) .c.det .ic{width:min(24cqh,22cqw);height:min(24cqh,22cqw)} :host([floor]) .c.det .ic ha-state-icon,:host([floor]) .c.det .ic ha-icon{--mdc-icon-size:min(21cqh,19cqw);width:min(21cqh,19cqw);height:min(21cqh,19cqw)}
 /* button layout = native button card as styled by HomeView (scenes) */
 .c.btn{gap:0;justify-content:center;padding:7cqh 5cqw 8cqh}
 .c.btn .ic{flex:1;width:min(30cqh,20cqw);height:auto;max-height:80%}
@@ -495,7 +499,7 @@ class HVBase extends HTMLElement {
     if (window.ResizeObserver && !this._fitRo) { this._fitRo = new ResizeObserver(() => this._fitSoon()); this._fitRo.observe(this); } }
   _fitText() {
     if (!this.isConnected || !this.hasAttribute('floor')) return;
-    for (const el of this.shadowRoot.querySelectorAll('.p,.s,.n,.l,.sub,.nm,.lc')) {
+    for (const el of this.shadowRoot.querySelectorAll('.p,.s,.d,.n,.l,.sub,.nm,.lc')) {
       el.style.fontSize = ''; const w = el.clientWidth; if (!w || el.scrollWidth <= w + 1) continue;
       const fs = parseFloat(getComputedStyle(el).fontSize) || 14; el.style.fontSize = Math.max(fs * 0.62, fs * w / el.scrollWidth * 0.97) + 'px';
     }
@@ -526,11 +530,12 @@ class HVBase extends HTMLElement {
     this._card.classList.toggle('active', !!v.active);
     this._card.classList.toggle('unavailable', !!(s && s.state === 'unavailable'));
     this._root.innerHTML = `<div class="c ${v.layout === 'button' ? 'btn' : ''}"><div class="ic"></div><div class="tx">
-      ${v.name !== '' ? `<div class="p">${esc(v.name)}</div>` : ''}${v.secondary != null && v.secondary !== '' ? `<div class="s">${esc(v.secondary)}</div>` : ''}</div></div>`;
+      ${v.name !== '' ? `<div class="p">${esc(v.name)}</div>` : ''}${v.secondary != null && v.secondary !== '' ? `<div class="s">${esc(v.secondary)}</div>` : ''}${(v.details || []).map(d => `<div class="d"><span class="dn">${esc(d.n)}</span><span class="dv">${esc(d.v)}</span></div>`).join('')}</div></div>`;
+    this._root.firstElementChild.classList.toggle('det', !!(v.details && v.details.length));
     const ic = this._root.querySelector('.ic');
     if (s || !v.icon) { const i = document.createElement('ha-state-icon'); i.hass = this._hass; i.stateObj = s; if (v.icon) i.icon = v.icon; ic.appendChild(i); }
     else { const i = document.createElement('ha-icon'); i.icon = v.icon; ic.appendChild(i); }
-    this._card.setAttribute('aria-label', [v.name, v.secondary].filter(Boolean).join(', '));
+    this._card.setAttribute('aria-label', [v.name, v.secondary, ...(v.details || []).map(d => d.n + ' ' + d.v)].filter(Boolean).join(', '));
   }
   name(def) { const c = this._config, s = this.stateObj; return c.name != null ? c.name : (s ? (s.attributes.friendly_name || s.entity_id) : (def || '')); }
   // --- actions (tap / hold), handled by Home Assistant itself via the standard "hass-action" event
@@ -653,9 +658,21 @@ class HVEntityCard extends HVBase {
     if (c.show_state === false && !c.label) sec = '';
     const active = c.active === 'always' ? true : c.active === 'never' ? false
       : c.active === 'running' ? [s, ...tplEntities(c.label).map(e => this._hass.states[e])].some(isRunning) : stateActive(s);
-    return { stateObj: s, icon: c.icon, name: this.name(), secondary: s ? sec : 'Not found', active, layout: c.layout };
+    return { stateObj: s, icon: c.icon, name: this.name(), secondary: s ? sec : 'Not found', active, layout: c.layout, details: this._details() };
   }
+  // 1.5.1: extra lines under the state, one per entity: "Energy 1.00 kWh". Name: the detail's own `name`, else its friendly name
+  // without the tile's name in front ("DishWasher Energy" on the DishWasher tile -> "Energy")
+  _detailList() { return [].concat(this._config.details || []).map(d => typeof d === 'string' ? { entity: d } : d).filter(d => d && d.entity); }
+  watched() { return super.watched().concat(this._detailList().map(d => d.entity)); }
+  _details() { const h = this._hass, s = this.stateObj, pre = [this.name(), s && s.attributes.friendly_name].filter(Boolean).map(x => String(x).trim().toLowerCase());
+    return this._detailList().map(d => { const ds = h.states[d.entity];
+      let n = d.name; if (n == null || n === '') { n = ds ? String(ds.attributes.friendly_name || d.entity) : d.entity;
+        for (const p of pre) if (p && n.toLowerCase().startsWith(p + ' ') && n.length > p.length + 1) { n = n.slice(p.length + 1); break; }
+        n = n.replace(/^[-–:·\s]+/, ''); n = n.charAt(0).toUpperCase() + n.slice(1); }
+      const v = !ds ? '—' : d.attribute ? fmtAttr(h, ds, d.attribute) : fmtState(h, ds);
+      return { n, v: ds && ds.state === 'unavailable' ? 'Unavailable' : v }; }); }
 }
+HVEntityCard.editorTransform = cfg => { if (Array.isArray(cfg.details)) { cfg.details = cfg.details.filter(d => d && d.entity).map(d => { const o = {}; for (const [k, v] of Object.entries(d)) if (v !== undefined && v !== '') o[k] = v; return o; }); if (!cfg.details.length) delete cfg.details; } };
 class HVLightCard extends HVEntityCard {
   static getStubConfig(hass) { return { entity: Object.keys(hass.states).find(k => k.startsWith('light.')) || 'light.example' }; }
   defaultAction(kind) { return { action: kind === 'tap' ? 'toggle' : 'more-info' }; }
@@ -1008,7 +1025,7 @@ const LABELS = { entity: 'Entity', entities: 'Entities', name: 'Name', room: 'Ro
   show_artist: 'Show artist', unit: 'Word after the count (e.g. "on", "lights on")', none_label: 'Text when none are on',
   navigation_path: 'Navigate to', alt_navigation_path: 'Toggle back to (when already on "Navigate to")', keep_query: 'Keep URL parameters (?kiosk&wp_enabled…)' };
 Object.assign(LABELS, { theme: 'Theme', day_light: 'Light style while the sun is up (dark text on white glass)', aspect: 'Tile shape (for the "height follows width" sizes)',
-  label: 'Sub-label (overrides state)', empty_label: 'Text when the attribute is empty' });
+  label: 'Sub-label (overrides state)', empty_label: 'Text when the attribute is empty', details: 'Details (extra lines under the state)' });
 const HELPERS = { label: 'Live values: {state} = this entity, {count} = how many are on (groups), {sensor.any_entity} = any entity\'s state.', text_color: 'Any CSS colour, e.g. #ffffff or rgba(255,255,255,.9). Empty = HomeView theme.', accent_color: 'Background when active, e.g. #cbc4ee or a gradient.',
   background_color: 'Card background, e.g. rgba(255,255,255,.12).', alt_navigation_path: 'Makes the card a view switch, e.g. /dashboard/main <-> /dashboard/light.' };
 HVThermostatCard.schema = [
@@ -1023,6 +1040,10 @@ const ENTITY_SCHEMA = (domain, tap, hold, extra = []) => [
 HVEntityCard.schema = ENTITY_SCHEMA(null, 'more-info', 'more-info', [
   { type: 'grid', name: '', schema: [{ name: 'label', selector: { text: {} } }, { name: 'attribute', selector: { attribute: {} }, context: { filter_entity: 'entity' } }] },
   { name: 'empty_label', selector: { text: {} } },
+  { name: 'details', selector: { object: { multiple: true, label_field: 'name', description_field: 'entity', fields: {
+    entity: { label: 'Entity (e.g. its power or energy sensor)', required: true, selector: { entity: {} } },
+    name: { label: 'Name (empty = the entity name without the tile name, e.g. "Energy")', selector: { text: {} } },
+    attribute: { label: 'Attribute (optional, instead of the state)', selector: { text: {} } } } } } },
   { type: 'grid', name: '', schema: [{ name: 'show_state', selector: { boolean: {} } },
     { name: 'active', selector: { select: { mode: 'dropdown', options: [{ value: 'auto', label: 'When on / open / playing' }, { value: 'running', label: 'When on / running / above 0' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] } } }] },
   LAYOUT]);
