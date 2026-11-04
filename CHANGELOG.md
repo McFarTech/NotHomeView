@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.5 – 2026-11-04
+
+### Fixes
+* **Modes app: icon sets such as animara now show** (`animara:house_status` …): the mode icons are drawn like the tiles' icons
+  (Home Assistant's state icon, linked to the mode's entity), and the buttons are no longer rebuilt on every update, so animated
+  icons keep running.
+
 ## 1.5.4 – 2026-11-04
 
 ### New features

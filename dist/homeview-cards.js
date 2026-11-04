@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.4';
+const HV_VERSION = '1.5.5';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6306,7 +6306,7 @@ const HV_MODES_CSS = `:host{display:block;font-family:${FONT};color:var(--hv-tex
 .mb.on{background:var(--hv-bg-on,linear-gradient(150deg,rgba(196,182,255,.55) 0%,rgba(160,140,250,.4) 100%));border-color:var(--hv-border-on,rgba(225,215,255,.5))}
 .mb.busy{opacity:.6} .mb.un{opacity:.45}
 .mi{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14)} .mb.on .mi{background:rgba(255,255,255,.92);color:#5b3fc4}
-.mi ha-icon{--mdc-icon-size:34px;display:flex}
+.mi ha-icon,.mi ha-state-icon{--mdc-icon-size:34px;width:34px;height:34px;display:flex}
 .mn{font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--hv-text,#fff)} .mb.on .mn{color:var(--hv-text-on,#fff)}
 .ms{font-size:14px;font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))} .mb.on .ms{color:var(--hv-text2-on,rgba(255,255,255,.85))}
 .em{opacity:.7;text-align:center;padding:30px}
@@ -6325,12 +6325,19 @@ HVHubCard.prototype._openModes = function (a) {
     for (const c0 of extra) { const cam = !!c0._cam || c0.type === 'custom:homeview-camera-card', cfg = Object.assign({}, c0); delete cfg._cam; let el;
       try { el = helpers ? helpers.createCardElement(cfg) : document.createElement(cfg.type.replace(/^custom:/, '')); if (!helpers && el.setConfig) el.setConfig(cfg); } catch (e) { el = document.createElement('div'); el.textContent = String(e); }
       if (/^HOMEVIEW-/.test(el.tagName || '')) el.setAttribute('floor', ''); el.hass = this._hass; const w = document.createElement('div'); if (cam) w.className = 'cam'; w.appendChild(el); mx.appendChild(w); xEls.push(el); } })();
+  // 1.5.5: buttons are built once; updates change classes / text and the icon's stateObj in place (state-aware icon sets such as
+  // animara render through ha-state-icon and keep animating instead of restarting on every update)
+  let built = false; const icOf = (m, st) => m.icon || (st && st.attributes.icon) || HV_MODE_ICON(m.entity.toLowerCase() + ' ' + String(nameOf(m, st)).toLowerCase());
   const paint = () => { const H = this._hass;
     if (!list.length) { g.innerHTML = '<div class="em">Add modes to this app in the Home Screen card editor (Apps → this app → Modes).</div>'; return; }
-    g.innerHTML = list.map((m, i) => { const st = H.states[m.entity], d = m.entity.split('.')[0], on = !!st && TOG.test(m.entity) && st.state === 'on', un = !st || st.state === 'unavailable';
-      const ic = m.icon || (st && st.attributes.icon) || HV_MODE_ICON(m.entity.toLowerCase() + ' ' + String(nameOf(m, st)).toLowerCase());
-      const sub = un ? 'Unavailable' : TOG.test(m.entity) ? (on ? 'On' : 'Off') : d === 'script' ? 'Run' : 'Activate';
-      return `<button class="mb${on ? ' on' : ''}${un ? ' un' : ''}${busy.has(i) ? ' busy' : ''}" data-i="${i}" aria-pressed="${on}"><span class="mi"><ha-icon icon="${esc(ic)}"></ha-icon></span><span class="mn">${esc(nameOf(m, st))}</span><span class="ms">${esc(sub)}</span></button>`; }).join(''); };
+    if (!built) { built = true; g.innerHTML = list.map((m, i) => `<button class="mb" data-i="${i}"><span class="mi"></span><span class="mn"></span><span class="ms"></span></button>`).join(''); }
+    g.querySelectorAll('.mb').forEach(b => { const i = Number(b.dataset.i), m = list[i], st = H.states[m.entity], d = m.entity.split('.')[0], on = !!st && TOG.test(m.entity) && st.state === 'on', un = !st || st.state === 'unavailable';
+      b.classList.toggle('on', on); b.classList.toggle('un', un); b.classList.toggle('busy', busy.has(i)); b.setAttribute('aria-pressed', String(on));
+      const nm = nameOf(m, st), sub = un ? 'Unavailable' : TOG.test(m.entity) ? (on ? 'On' : 'Off') : d === 'script' ? 'Run' : 'Activate';
+      b.querySelector('.mn').textContent = nm; b.querySelector('.ms').textContent = sub; b.setAttribute('aria-label', nm + ', ' + sub);
+      const box = b.querySelector('.mi'), ic = icOf(m, st); let el = box.firstElementChild;
+      if (!el || el._hvIc !== ic || !!st !== el.localName.endsWith('state-icon')) { el = document.createElement(st ? 'ha-state-icon' : 'ha-icon'); el._hvIc = ic; box.replaceChildren(el); }
+      if (st) { el.hass = H; el.stateObj = st; } el.icon = ic; }); };
   g.addEventListener('click', async e => { const b = e.composedPath().find(n => n.classList && n.classList.contains('mb')); if (!b) return; const i = Number(b.dataset.i), m = list[i], H = this._hass, st = H.states[m.entity]; if (!m || busy.has(i)) return;
     const d = m.entity.split('.')[0]; busy.add(i); paint(); if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
     try { if (TOG.test(m.entity)) { const turnOn = !(st && st.state === 'on');
