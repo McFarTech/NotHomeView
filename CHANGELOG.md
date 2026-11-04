@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.8 – 2026-11-04
+
+### Changes
+* **Light tile: brightness % for groups that report none.** A Home Assistant light group shows the average brightness of its members
+  that are on; for other groups (e.g. Zigbee2MQTT) list the lights in `brightness_from:` (editor: *Brightness % from these lights*).
+
 ## 1.5.7 – 2026-11-04
 
 ### Changes

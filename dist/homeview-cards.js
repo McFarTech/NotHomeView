@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.7';
+const HV_VERSION = '1.5.8';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -679,11 +679,20 @@ class HVLightCard extends HVEntityCard {
   view() {
     const c = this._config, s = this.stateObj, h = this._hass;
     let sec = '';
-    if (s) sec = s.state === 'on' && s.attributes.brightness != null ? Math.round(s.attributes.brightness / 2.55) + '%' : fmtState(h, s);
+    if (s) { const br = s.state === 'on' ? this._bright() : null; sec = br != null ? br + '%' : fmtState(h, s); }
     if (c.room) sec = c.room + ' · ' + sec;
     if (c.show_state === false) sec = c.room || '';
     return { stateObj: s, icon: c.icon, name: this.name(), secondary: s ? sec : 'Not found', active: stateActive(s), layout: c.layout };
   }
+  // 1.5.8: a light (group) that reports no brightness: the average of the lights that are on among brightness_from: [...]
+  // or, for a Home Assistant light group, its members (like Home Assistant's own group brightness)
+  _brightFrom() { const c = this._config, s = this.stateObj; const l = [].concat(c.brightness_from || []).map(e => typeof e === 'string' ? e : e && e.entity).filter(Boolean);
+    return l.length ? l : (s && Array.isArray(s.attributes.entity_id) ? s.attributes.entity_id.filter(e => e !== c.entity && /^light\./.test(e)) : []); }
+  watched() { return super.watched().concat(this._hass ? this._brightFrom() : []); }
+  _bright() { const s = this.stateObj, h = this._hass; if (!s) return null;
+    if (s.attributes.brightness != null && !(this._config.brightness_from || []).length) return Math.round(s.attributes.brightness / 2.55);
+    const v = this._brightFrom().map(e => h.states[e]).filter(x => x && x.state === 'on' && x.attributes.brightness != null).map(x => x.attributes.brightness);
+    return v.length ? Math.round(v.reduce((a, b) => a + b, 0) / v.length / 2.55) : (s.attributes.brightness != null ? Math.round(s.attributes.brightness / 2.55) : null); }
 }
 class HVGarageCard extends HVEntityCard {
   static get defaults() { return { confirm: true, show_both: true, both_label: 'Open both' }; }
@@ -1025,7 +1034,7 @@ const LABELS = { entity: 'Entity', entities: 'Entities', name: 'Name', room: 'Ro
   show_artist: 'Show artist', unit: 'Word after the count (e.g. "on", "lights on")', none_label: 'Text when none are on',
   navigation_path: 'Navigate to', alt_navigation_path: 'Toggle back to (when already on "Navigate to")', keep_query: 'Keep URL parameters (?kiosk&wp_enabled…)' };
 Object.assign(LABELS, { theme: 'Theme', day_light: 'Light style while the sun is up (dark text on white glass)', aspect: 'Tile shape (for the "height follows width" sizes)',
-  label: 'Sub-label (overrides state)', empty_label: 'Text when the attribute is empty', details: 'Details (extra lines under the state)' });
+  label: 'Sub-label (overrides state)', empty_label: 'Text when the attribute is empty', details: 'Details (extra lines under the state)', brightness_from: 'Brightness % from these lights (for a group that reports none)' });
 const HELPERS = { label: 'Live values: {state} = this entity, {count} = how many are on (groups), {sensor.any_entity} = any entity\'s state.', text_color: 'Any CSS colour, e.g. #ffffff or rgba(255,255,255,.9). Empty = HomeView theme.', accent_color: 'Background when active, e.g. #cbc4ee or a gradient.',
   background_color: 'Card background, e.g. rgba(255,255,255,.12).', alt_navigation_path: 'Makes the card a view switch, e.g. /dashboard/main <-> /dashboard/light.' };
 HVThermostatCard.schema = [
@@ -1048,7 +1057,8 @@ HVEntityCard.schema = ENTITY_SCHEMA(null, 'more-info', 'more-info', [
     { name: 'active', selector: { select: { mode: 'dropdown', options: [{ value: 'auto', label: 'When on / open / playing' }, { value: 'running', label: 'When on / running / above 0' }, { value: 'always', label: 'Always' }, { value: 'never', label: 'Never' }] } } }] },
   LAYOUT]);
 HVLightCard.schema = ENTITY_SCHEMA('light', 'toggle', 'more-info', [
-  { type: 'grid', name: '', schema: [{ name: 'room', selector: { text: {} } }, { name: 'show_state', selector: { boolean: {} } }] }, LAYOUT]);
+  { type: 'grid', name: '', schema: [{ name: 'room', selector: { text: {} } }, { name: 'show_state', selector: { boolean: {} } }] },
+  { name: 'brightness_from', selector: { entity: { domain: 'light', multiple: true } } }, LAYOUT]);
 HVGarageCard.editorDefaults = true;
 const GC_FIELDS = [
   { name: 'entity_b', selector: { entity: { domain: 'cover' } } },
