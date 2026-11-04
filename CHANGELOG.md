@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.4 – 2026-11-04
+
+### New features
+* **Modes app: a camera under the buttons** (`camera: camera.doorbell`, or *Modes app: camera* in the editor): a NotHomeView Camera
+  tile (16:9, live, tap for the large view). `cards:` adds any other cards there too (YAML).
+
 ## 1.5.3 – 2026-11-04
 
 ### New features

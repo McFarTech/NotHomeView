@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.3';
+const HV_VERSION = '1.5.4';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6310,6 +6310,7 @@ const HV_MODES_CSS = `:host{display:block;font-family:${FONT};color:var(--hv-tex
 .mn{font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--hv-text,#fff)} .mb.on .mn{color:var(--hv-text-on,#fff)}
 .ms{font-size:14px;font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))} .mb.on .ms{color:var(--hv-text2-on,rgba(255,255,255,.85))}
 .em{opacity:.7;text-align:center;padding:30px}
+.mx{width:min(100%,800px);margin:16px auto 0;display:flex;flex-direction:column;gap:14px} .mx > .cam{aspect-ratio:16/9;display:flex} .mx > div > *{flex:1;min-width:0;width:100%;height:100%;display:block}
 :host([day]) .mb{background:#fff;border-color:rgba(0,0,0,.06);box-shadow:0 6px 18px rgba(30,30,60,.08)} :host([day]) .mn{color:#1c1c1e} :host([day]) .ms{color:rgba(60,60,67,.7)}
 :host([day]) .mi{background:rgba(120,120,128,.12);color:#3c3c43} :host([day]) .mb.on{background:linear-gradient(150deg,#8f7bff,#5b3fc4);border-color:transparent} :host([day]) .mb.on .mn{color:#fff} :host([day]) .mb.on .ms{color:rgba(255,255,255,.85)}`;
 HVHubCard.prototype._openModes = function (a) {
@@ -6317,7 +6318,13 @@ HVHubCard.prototype._openModes = function (a) {
   const day = hvMode(this._config.theme, this._hass) === 'day', host = document.createElement('homeview-modes'), sr = host.attachShadow({ mode: 'open' }); host.toggleAttribute('day', day);
   const TOG = /^(input_boolean|switch|light|fan)\./, busy = new Set();
   const nameOf = (m, st) => m.name || (st && st.attributes.friendly_name) || m.entity.split('.')[1].replace(/_/g, ' ');
-  sr.innerHTML = `<style>${HV_MODES_CSS}</style><div class="mg" role="group" aria-label="${esc(a.name || 'Modes')}"></div>`; const g = sr.querySelector('.mg');
+  sr.innerHTML = `<style>${HV_MODES_CSS}</style><div class="mg" role="group" aria-label="${esc(a.name || 'Modes')}"></div><div class="mx"></div>`; const g = sr.querySelector('.mg');
+  // extra cards under the buttons: camera: camera.x (a NotHomeView Camera tile, 16:9) and / or cards: [any card configs]
+  const extra = [].concat(a.camera ? [{ type: 'custom:homeview-camera-card', entity: a.camera, size: '2x6', _cam: true }] : [], a.cards || []).filter(x => x && x.type), xEls = [];
+  if (extra.length) (async () => { const helpers = window.loadCardHelpers ? await window.loadCardHelpers() : null; const mx = sr.querySelector('.mx');
+    for (const c0 of extra) { const cam = !!c0._cam || c0.type === 'custom:homeview-camera-card', cfg = Object.assign({}, c0); delete cfg._cam; let el;
+      try { el = helpers ? helpers.createCardElement(cfg) : document.createElement(cfg.type.replace(/^custom:/, '')); if (!helpers && el.setConfig) el.setConfig(cfg); } catch (e) { el = document.createElement('div'); el.textContent = String(e); }
+      if (/^HOMEVIEW-/.test(el.tagName || '')) el.setAttribute('floor', ''); el.hass = this._hass; const w = document.createElement('div'); if (cam) w.className = 'cam'; w.appendChild(el); mx.appendChild(w); xEls.push(el); } })();
   const paint = () => { const H = this._hass;
     if (!list.length) { g.innerHTML = '<div class="em">Add modes to this app in the Home Screen card editor (Apps → this app → Modes).</div>'; return; }
     g.innerHTML = list.map((m, i) => { const st = H.states[m.entity], d = m.entity.split('.')[0], on = !!st && TOG.test(m.entity) && st.state === 'on', un = !st || st.state === 'unavailable';
@@ -6334,7 +6341,7 @@ HVHubCard.prototype._openModes = function (a) {
     catch (x) { hvToast('Mode not changed: ' + (x && (x.message || x.code) || x)); }
     busy.delete(i); paint(); });
   paint();
-  this._openSheet({ label: a.name || 'Modes', day, dayBg: '#eeeef0', build: bd => { bd.appendChild(host); return { set hass(v) { paint(); } }; } }); };
+  this._openSheet({ label: a.name || 'Modes', day, dayBg: '#eeeef0', build: bd => { bd.appendChild(host); return { set hass(v) { paint(); xEls.forEach(e => { e.hass = v; }); } }; } }); };
 const HUB_APP_FIELDS = {
   name: { label: 'Label', selector: { text: {} } },
   icon: { label: 'Icon (hv:home = the Home app house)', selector: { text: {} } },
@@ -6353,7 +6360,8 @@ const HUB_APP_FIELDS = {
     entity: { label: 'Entity (input_boolean / switch to turn on and off, or a scene / script to run)', required: true, selector: { entity: { domain: ['input_boolean', 'switch', 'scene', 'script'] } } },
     name: { label: 'Name (empty = the entity name, e.g. "Away" for input_boolean.nothome)', selector: { text: {} } },
     icon: { label: 'Icon (empty = picked from the name)', selector: { icon: {} } } } } } },
-  exclusive: { label: 'Modes app: only one on at a time (turning one on turns the others off)', selector: { boolean: {} } } };
+  exclusive: { label: 'Modes app: only one on at a time (turning one on turns the others off)', selector: { boolean: {} } },
+  camera: { label: 'Modes app: camera under the buttons (optional)', selector: { entity: { domain: 'camera' } } } };
 const hubTileOpt = (c, i) => ((c && Array.isArray(c.side_tiles) ? c.side_tiles[i] : null) || {});
 const hubTileSizes = c => { const s = hubSizes(c && c.side_sizes); return Array.from({ length: Math.max(s.length, ((c && c.side_cards) || []).length) }, (_, i) => { const o = hubTileOpt(c, i); return o.size === 'big' ? 3 : o.size === 'wide' ? 2 : o.size === 'square' ? 1 : s[i] || 1; }); };
 const hubSizes = t => String(t || '').split(/[\s,;]+/).filter(Boolean).map(x => /^b/i.test(x) || x === '3' ? 3 : /^w/i.test(x) || x === '2' ? 2 : 1);

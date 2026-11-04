@@ -204,6 +204,7 @@ apps:
     color_to: '#6a4bd8'
     kind: modes
     exclusive: true            # optional: turning one on turns the others off
+    camera: camera.doorbell    # optional: a camera tile under the buttons (cards: [...] adds any other cards)
     modes:
       - input_boolean.home
       - entity: input_boolean.nothome
