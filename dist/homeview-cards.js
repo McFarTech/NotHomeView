@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.13';
+const HV_VERSION = '1.5.14';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -4313,8 +4313,18 @@ class HVChipsCard extends HTMLElement {
     const parts = []; if (lights) parts.push(on ? `${on} light${on > 1 ? 's' : ''} on` : 'Lights off'); if (temp != null) parts.push((Math.round(temp * 10) / 10) + '°');
     return { text: parts.join(' · ') || rm.status || '', on: on > 0 };
   }
+  // 1.5.14: the picker lists the rooms in the order of the room tiles on the dashboard's Rooms page (arrange that page once, every
+  // picker follows); rooms not on it keep their place at the end. picker_order: as_listed = the chip's own order.
+  _roomOrder(rooms, ch) { if (ch.picker_order === 'as_listed') return rooms;
+    try { const root = hvFindRoot(this), cfg = root && root.lovelace && root.lovelace.config, vw = cfg && (cfg.views || []).find(v => v.path === 'rooms'); if (!vw) return rooms;
+      const nav = c => c && (c.navigation_path || (c.tap_action && c.tap_action.navigation_path)) || '', norm = p => String(p || '').replace(/\/+$/, '').split('/').pop();
+      const order = []; const walk = (o, d) => { if (!o || typeof o !== 'object' || d > 12) return; if (Array.isArray(o)) { o.forEach(x => walk(x, d + 1)); return; }
+        if (o.type && o.type !== 'custom:homeview-grid-card' && nav(o)) order.push(norm(nav(o))); for (const k of ['sections', 'cards', 'card']) if (o[k]) walk(o[k], d + 1); };
+      walk(vw.sections || vw.cards || [], 0); if (!order.length) return rooms;
+      const at = r => { const i = order.indexOf(norm(r.navigation_path)); return i < 0 ? 1e6 : i; };
+      return rooms.map((r, i) => ({ r, i })).sort((a, b) => (at(a.r) - at(b.r)) || (a.i - b.i)).map(x => x.r); } catch (e) { return rooms; } }
   _openPicker(ch) {
-    this._closePicker(); const rooms = (ch.rooms || []).filter(r => r && (r.name || r.navigation_path));
+    this._closePicker(); const rooms = this._roomOrder((ch.rooms || []).filter(r => r && (r.name || r.navigation_path)), ch);
     const host = this._pick = document.createElement('homeview-room-picker'), r = host.attachShadow({ mode: 'open' });
     host.toggleAttribute('day', this.hasAttribute('day')); host.toggleAttribute('hv-day', this.hasAttribute('hv-day'));
     r.innerHTML = `<style>${PICK_CSS}</style><div class="bd"></div><div class="sh" role="dialog" aria-modal="true" aria-label="${esc(ch.picker_title || ch.name || 'Rooms')}">
@@ -4377,6 +4387,7 @@ const CHIP_FIELDS = {
   hold_action: { label: 'Hold action (default: more-info)', selector: { ui_action: {} } },
   room_picker: { label: 'Tap opens the room picker (instead of the tap action)', selector: { boolean: {} } },
   picker_title: { label: 'Room picker title', selector: { text: {} } },
+  picker_order: { label: 'Room picker order', selector: { select: { mode: 'dropdown', options: [{ value: 'rooms_page', label: 'Same as the Rooms page (default)' }, { value: 'as_listed', label: 'As listed below' }] } } },
   rooms: { label: 'Room picker: rooms', selector: { object: { multiple: true, label_field: 'name', description_field: 'navigation_path', fields: {
     name: { label: 'Name', selector: { text: {} } }, icon: { label: 'Icon', selector: { icon: {} } },
     navigation_path: { label: 'Opens (view)', selector: { navigation: {} } },

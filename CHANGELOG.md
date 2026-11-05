@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.14 – 2026-11-05
+
+### Changes
+* **Rooms picker follows the Rooms page order.** Arrange the room tiles on the Rooms page (hold and drag) and every Rooms picker on
+  every page lists the rooms in that order. Rooms that aren't on the Rooms page come last. `picker_order: as_listed` keeps a chip's
+  own order.
+
 ## 1.5.13 – 2026-11-05
 
 ### Fixes
