@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.9 – 2026-11-05
+
+### New features
+* **Home Screen: people along the top** (`people: [person.a, …]`, editor: *People along the top*). A row of round avatars replaces
+  the single one: photo (or initial), a green dot when home, a blue dot in another zone, dimmed when away. Tap one for its details.
+
 ## 1.5.8 – 2026-11-04
 
 ### Changes

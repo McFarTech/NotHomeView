@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.8';
+const HV_VERSION = '1.5.9';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -4660,6 +4660,12 @@ const HUB_CSS = `:host{display:block;position:relative;font-family:${FONT};color
 .amic{all:unset;cursor:pointer;flex:none;width:calc(var(--av,64px) * .78);height:calc(var(--av,64px) * .78);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:0 4px 14px rgba(0,0,0,.2);transition:transform .12s ease}
 .amic:active{transform:scale(.94)} .amic ha-icon{--mdc-icon-size:calc(var(--av,64px) * .4);display:flex}
 .tpill{all:unset;cursor:pointer;display:flex;align-items:center;gap:6px;height:calc(var(--av,64px) * .6);padding:0 14px;border-radius:999px;background:rgba(255,159,10,.22);color:#ffb340;font-weight:700;font-variant-numeric:tabular-nums;font-size:calc(var(--av,64px) * .28);border:1px solid rgba(255,159,10,.35);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)} .tpill[hidden]{display:none} .tpill ha-icon{--mdc-icon-size:calc(var(--av,64px) * .32);display:flex}
+.ppl{display:flex;align-items:center;gap:calc(var(--av,64px) * .16);flex:none}
+.pav{--av2:calc(var(--av,64px) * .82);width:var(--av2);height:var(--av2);position:relative;transition:opacity .3s ease,filter .3s ease}
+.pav .pic{font-size:calc(var(--av,64px) * .34)} .pav.away{opacity:.5;filter:grayscale(.85)}
+.pav .dot{position:absolute;right:1px;bottom:1px;width:28%;height:28%;border-radius:50%;box-sizing:border-box;border:2px solid #1c1c24;display:none}
+.pav.home .dot{display:block;background:#30d158} .pav.zone .dot{display:block;background:#0a84ff}
+@media (max-width:700px){ .ppl{gap:4px} .pav{--av2:calc(var(--av,64px) * .62)} .pav .dot{border-width:1.5px} }
 .av .pic{width:100%;height:100%;border-radius:50%;background:#2a2a40 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:calc(var(--av,64px) * .4)}
 .mid{display:flex;gap:var(--cg2,40px);align-items:flex-start;flex:none}
 .apps{display:grid;grid-template-columns:repeat(var(--ac,2),var(--I,110px));column-gap:var(--cg,40px);row-gap:var(--rg,22px)}
@@ -5783,6 +5789,12 @@ class HVHubCard extends HTMLElement {
     if (c.person && S[c.person]) return S[c.person];
     const uid = h.user && h.user.id, p = uid && Object.values(S).find(s => s.entity_id.startsWith('person.') && s.attributes.user_id === uid);
     return p || (c.fallback_person && S[c.fallback_person]) || null; }
+  // 1.5.9: people: [person.a, ...] = a row of avatars where the single avatar is (photo or initial; green dot = home, dimmed = away)
+  _ppl() { const S = this._hass.states; return [].concat(this._config.people || []).map(e => typeof e === 'string' ? e : e && e.entity).filter(e => e && S[e]).map(e => S[e]); }
+  _pplHtml(c) { return this._ppl().map(s => { const nm = String(s.attributes.friendly_name || s.entity_id.split('.')[1]), pic = s.attributes.entity_picture, st = s.state;
+      const cls = st === 'home' ? ' home' : st === 'not_home' ? ' away' : st === 'unknown' || st === 'unavailable' ? '' : ' zone';
+      const where = st === 'home' ? 'home' : st === 'not_home' ? 'away' : st === 'unknown' || st === 'unavailable' ? '' : st;
+      return `<button class="av pav${cls}" data-k="pp" data-e="${esc(s.entity_id)}" aria-label="${esc(nm + (where ? ', ' + where : ''))}" title="${esc(nm + (where ? ' · ' + where : ''))}"${c.ring_color ? ` style="--ring:${esc(c.ring_color)}"` : ''}><div class="pic"${pic ? ` style="background-image:url('${esc(pic)}')"` : ''}>${pic ? '' : esc(nm.charAt(0).toUpperCase())}</div><span class="dot"></span></button>`; }).join(''); }
   _greeting() { const c = this._config, hr = new Date().getHours(), m = Number(c.morning_start), a = Number(c.afternoon_start), e = Number(c.evening_start);
     if (c.night_start !== '' && c.night_start != null) { const n = Number(c.night_start); if (n >= e ? (hr >= n || hr < m) : (hr >= n && hr < m)) return c.greeting_night || 'Good night'; }
     return hr >= m && hr < a ? c.greeting_morning : hr >= a && hr < e ? c.greeting_afternoon : c.greeting_evening; }
@@ -5791,7 +5803,7 @@ class HVHubCard extends HTMLElement {
   // --- render
   _rSig() { const c = this._config, h = this._hass, p = this._person();
     const first = (c.name || (p && p.attributes.friendly_name) || (h.user && h.user.name) || '').trim().split(/\s+/)[0] || '';
-    return JSON.stringify([first, p && p.attributes.entity_picture, this._greeting(), c.apps, c.ring_color, c.photo_label, c.show_calendar, c.assistant_enabled === true && c.assistant_button !== false]); }
+    return JSON.stringify([first, p && p.attributes.entity_picture, this._ppl().map(x => [x.entity_id, x.state, x.attributes.entity_picture, x.attributes.friendly_name]), this._greeting(), c.apps, c.ring_color, c.photo_label, c.show_calendar, c.assistant_enabled === true && c.assistant_button !== false]); }
   _appsHtml(c) { const glyph = a => a.icon === 'hv:home' ? HUB_HOME_SVG : `<ha-icon icon="${esc(a.icon || 'mdi:apps')}"></ha-icon>`;
     return c.apps.map((a, i) => `<button class="app" data-app="${i}" aria-label="${esc(a.name || '')}"><span class="ico" style="background:linear-gradient(180deg,${esc(a.color_from || '#8e8e93')} 0%,${esc(a.color_to || a.color_from || '#636366')} 100%);color:${esc(a.glyph_color || '#fff')}">${glyph(a)}</span><span class="lb">${esc(a.name || '')}</span></button>`).join(''); }
   // 1.32.0 Home Screen arrange: a new config applied in place (apps redrawn, side tiles reordered / resized with their elements kept, no rebuild)
@@ -5813,14 +5825,14 @@ class HVHubCard extends HTMLElement {
       this._ssp = this.shadowRoot.querySelector('.ssp'); this._ssPaint();
       this._w = this.shadowRoot.querySelector('.w'); this._bgs = [...this.shadowRoot.querySelectorAll('.bgi')];
       this._w.addEventListener('click', e => { const t = e.composedPath().find(n => n.dataset && (n.dataset.app != null || n.dataset.k)); if (!t) return;
-        if (t.dataset.app != null) this._runApp(c => c, Number(t.dataset.app)); else if (t.dataset.k === 'photos') this._photoTap(); else if (t.dataset.k === 'person') this._personTap(); else if (t.dataset.k === 'assist') this._openAssist(); else if (t.dataset.k === 'timer') HVTM.show(); });
+        if (t.dataset.app != null) this._runApp(c => c, Number(t.dataset.app)); else if (t.dataset.k === 'photos') this._photoTap(); else if (t.dataset.k === 'person') this._personTap(); else if (t.dataset.k === 'pp') fire(this, 'hass-more-info', { entityId: t.dataset.e }); else if (t.dataset.k === 'assist') this._openAssist(); else if (t.dataset.k === 'timer') HVTM.show(); });
     }
     const greet = String(this._greeting() || '').trim().replace(/,?$/, ',');
     const apps = this._appsHtml(c);
     const keepCal = this._cal && c.show_calendar !== false ? this._cal : null;
     const topH = `<div class="top"><div class="gr"><div class="g1">${esc(greet)}</div><div class="g2">${esc(first)}</div></div>
       <div class="tr"><button class="tpill" data-k="timer" hidden aria-label="Show the timer"><ha-icon icon="mdi:timer-outline"></ha-icon><span></span></button>${amic ? '<button class="amic" data-k="assist" aria-label="Assistant"><ha-icon icon="mdi:microphone"></ha-icon></button>' : ''}
-      <button class="av" data-k="person" aria-label="${esc(first)}"${c.ring_color ? ` style="--ring:${esc(c.ring_color)}"` : ''}><div class="pic"${pic ? ` style="background-image:url('${esc(pic)}')"` : ''}>${pic ? '' : esc(first.charAt(0))}</div></button></div></div>`;
+      ${this._ppl().length ? `<div class="ppl">${this._pplHtml(c)}</div>` : `<button class="av" data-k="person" aria-label="${esc(first)}"${c.ring_color ? ` style="--ring:${esc(c.ring_color)}"` : ''}><div class="pic"${pic ? ` style="background-image:url('${esc(pic)}')"` : ''}>${pic ? '' : esc(first.charAt(0))}</div></button>`}</div></div>`;
     if (this._rowEl && this._rowEl.parentNode && this._w.contains(this._rowEl)) { // 1.32.0: redraw in place: greeting / avatar / apps / labels / calendar slot; the tile row (camera streams) stays
       const t0 = this._w.querySelector('.top'); if (t0) { t0.insertAdjacentHTML('beforebegin', topH); t0.remove(); }
       const ap = this._w.querySelector('.apps'); if (ap) ap.innerHTML = apps;
@@ -6396,6 +6408,7 @@ const HUB_SCHEMA = [
   { name: 'apps', selector: { object: { multiple: true, label_field: 'name', description_field: 'kind', fields: HUB_APP_FIELDS } } },
   { type: 'expandable', name: '', flatten: true, title: 'Person & greeting', icon: 'mdi:account-circle-outline', schema: [
     { type: 'grid', name: '', schema: [{ name: 'person', selector: { entity: { domain: 'person' } } }, { name: 'fallback_person', selector: { entity: { domain: 'person' } } }] },
+    { name: 'people', selector: { entity: { domain: 'person', multiple: true } } },
     { type: 'grid', name: '', schema: [{ name: 'name', selector: { text: {} } }, { name: 'ring_color', selector: { text: {} } }] },
     { type: 'grid', name: '', schema: [n_('morning_start', 0, 23), n_('afternoon_start', 0, 23), n_('evening_start', 0, 23), n_('night_start', 0, 23)] },
     { type: 'grid', name: '', schema: [{ name: 'greeting_morning', selector: { text: {} } }, { name: 'greeting_afternoon', selector: { text: {} } }, { name: 'greeting_evening', selector: { text: {} } }, { name: 'greeting_night', selector: { text: {} } }] }] },
@@ -6452,7 +6465,7 @@ const HUB_SCHEMA = [
     { name: 'full_height_popups', selector: { boolean: {} } },
     { name: 'popup_edit', selector: { boolean: {} } },
     { name: 'swipe_screensaver', selector: { select: { mode: 'dropdown', options: [{ value: 'auto', label: 'Auto (when the screensaver is on here)' }, { value: 'on', label: 'On' }, { value: 'off', label: 'Off' }] } } }, { name: 'ss_hold', selector: { boolean: {} } }] }];
-Object.assign(LABELS, { photo_source_mode: 'Photo source', photo_album_url: 'Album link', apps: 'Apps (drag to reorder, pencil to edit)', person: 'Person (empty = the logged-in user)', fallback_person: 'Fallback person (no match)', ring_color: 'Avatar ring colour / gradient',
+Object.assign(LABELS, { photo_source_mode: 'Photo source', photo_album_url: 'Album link', apps: 'Apps (drag to reorder, pencil to edit)', person: 'Person (empty = the logged-in user)', fallback_person: 'Fallback person (no match)', people: 'People along the top (replaces the single avatar; green dot = home, dimmed = away)', ring_color: 'Avatar ring colour / gradient',
   morning_start: 'Morning from (hour)', afternoon_start: 'Afternoon from', evening_start: 'Evening from', night_start: 'Night from (empty = evening until morning)', greeting_night: 'Night greeting', greeting_morning: 'Morning greeting', greeting_afternoon: 'Afternoon greeting', greeting_evening: 'Evening greeting',
   wallpaper: 'Wallpaper when there are no photos (any CSS background, e.g. a colour or gradient)', photo_source: 'Media folder (empty = the Wallpanel screensaver\'s, e.g. media-source://media_source/local/)', photo_interval: 'Next photo every', photo_order: 'Order', blur: 'Background blur (px)', dim: 'Edge darkening for text readability (0-0.9)', photo_backdrop: 'Show the current photo, blurred, behind the page', bg_freeze: 'Freeze the blurred background while the Home Screen is showing', bg_transparency: 'Background transparency',
   photo_tap: 'Tapping Photos', photo_label: 'Photos label', photo_viewer_nav: 'Viewer: Previous / Next buttons', photo_viewer_swipe: 'Viewer: swipe left / right to change picture', photo_viewer_add: 'Viewer: View Gallery button', photo_gallery_upload: 'Gallery: let people upload new pictures', photo_viewer_pause: 'Pause the screensaver while the viewer is open', show_calendar: 'Show the calendar', calendar_show_weather: 'Forecast per day', calendar_entities: 'Calendars (empty = all)', calendar_layout: 'Calendar layout',
