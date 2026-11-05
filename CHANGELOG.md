@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.12 – 2026-11-05
+
+### Fixes
+* **Page Grid: ⋯ → Edit works when the saved copy differs** from the one on screen (e.g. after Sync rooms or a change on another
+  device): the Page Grid on the current page with the most matching tiles is used. If the editor still can't open, the message says why.
+
 ## 1.5.11 – 2026-11-05
 
 ### Fixes
