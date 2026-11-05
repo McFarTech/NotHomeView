@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.16 – 2026-11-05
+
+### Changes
+* **Modes app: independent modes.** `exclusive: false` on a mode keeps it out of *only one on at a time*: it doesn't turn the
+  other modes off and isn't turned off by them (e.g. per-person sleep modes next to Home / Away / Sleep).
+
 ## 1.5.15 – 2026-11-05
 
 ### New features

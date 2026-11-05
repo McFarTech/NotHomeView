@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.15';
+const HV_VERSION = '1.5.16';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6410,7 +6410,8 @@ HVHubCard.prototype._openModes = function (a) {
     const d = m.entity.split('.')[0]; busy.add(i); paint(); if (navigator.vibrate) try { navigator.vibrate(15); } catch (x) {}
     try { if (TOG.test(m.entity)) { const turnOn = !(st && st.state === 'on');
         await H.callService(d, turnOn ? 'turn_on' : 'turn_off', { entity_id: m.entity });
-        if (turnOn && a.exclusive) { const off = list.filter((x, k) => k !== i && TOG.test(x.entity) && H.states[x.entity] && H.states[x.entity].state === 'on');
+        // 1.5.16: a mode with exclusive: false stays out of "only one on at a time" (it neither turns the others off nor gets turned off)
+        if (turnOn && a.exclusive && m.exclusive !== false) { const off = list.filter((x, k) => k !== i && x.exclusive !== false && TOG.test(x.entity) && H.states[x.entity] && H.states[x.entity].state === 'on');
           for (const x of off) await H.callService(x.entity.split('.')[0], 'turn_off', { entity_id: x.entity }); } }
       else await H.callService(d, 'turn_on', { entity_id: m.entity }); }
     catch (x) { hvToast('Mode not changed: ' + (x && (x.message || x.code) || x)); }
@@ -6436,6 +6437,7 @@ const HUB_APP_FIELDS = {
     name: { label: 'Name (empty = the entity name, e.g. "Away" for input_boolean.nothome)', selector: { text: {} } },
     icon: { label: 'Icon (empty = picked from the name)', selector: { icon: {} } },
     person: { label: "Person (shows their photo instead of the icon)", selector: { entity: { domain: 'person' } } },
+    exclusive: { label: 'Part of "only one on at a time" (off = this mode is independent)', selector: { boolean: {} }, default: true },
     icon_style: { label: 'Icon style (empty = picture for full-colour sets such as animara, circle for mdi)', selector: { select: { mode: 'dropdown', options: [{ value: 'circle', label: 'Glyph in a circle' }, { value: 'picture', label: 'Picture (bigger, no circle)' }] } } } } } } },
   exclusive: { label: 'Modes app: only one on at a time (turning one on turns the others off)', selector: { boolean: {} } },
   camera: { label: 'Modes app: camera under the buttons (optional)', selector: { entity: { domain: 'camera' } } } };
