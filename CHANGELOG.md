@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.15 – 2026-11-05
+
+### New features
+* **Modes app: a person's photo as the icon** (`person: person.craig` on a mode, or `picture: <url>`). The photo gets a white ring
+  while the mode is on. No photo = the normal icon.
+
 ## 1.5.14 – 2026-11-05
 
 ### Changes

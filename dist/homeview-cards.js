@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.14';
+const HV_VERSION = '1.5.15';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6363,6 +6363,8 @@ const HV_MODES_CSS = `:host{display:block;font-family:${FONT};color:var(--hv-tex
 .mb.busy{opacity:.6} .mb.un{opacity:.45}
 .mi{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.14)} .mb.on .mi{background:rgba(255,255,255,.92);color:#5b3fc4}
 .mi ha-icon,.mi ha-state-icon{--mdc-icon-size:34px;width:34px;height:34px;display:flex}
+.mi.ph,.mb.on .mi.ph,:host([day]) .mi.ph{background:none} .phi{width:64px;height:64px;border-radius:50%;background:center/cover no-repeat rgba(255,255,255,.14);box-shadow:0 0 0 2px rgba(255,255,255,.22),0 4px 12px rgba(0,0,30,.25);transition:box-shadow .25s ease,filter .25s ease;filter:saturate(.85)}
+.mb.on .phi{box-shadow:0 0 0 3px #fff,0 0 0 6px rgba(196,182,255,.55),0 4px 14px rgba(0,0,30,.3);filter:none}
 .mi.pic,.mb.on .mi.pic,:host([day]) .mi.pic{background:none} .mi.pic ha-icon,.mi.pic ha-state-icon{--mdc-icon-size:64px;width:64px;height:64px;filter:drop-shadow(0 4px 10px rgba(0,0,30,.28))}
 .mn{font-size:19px;font-weight:700;letter-spacing:-.01em;color:var(--hv-text,#fff)} .mb.on .mn{color:var(--hv-text-on,#fff)}
 .ms{font-size:14px;font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))} .mb.on .ms{color:var(--hv-text2-on,rgba(255,255,255,.85))}
@@ -6393,6 +6395,11 @@ HVHubCard.prototype._openModes = function (a) {
       const nm = nameOf(m, st), sub = un ? 'Unavailable' : TOG.test(m.entity) ? (on ? 'On' : 'Off') : d === 'script' ? 'Run' : 'Activate';
       b.querySelector('.mn').textContent = nm; b.querySelector('.ms').textContent = sub; b.setAttribute('aria-label', nm + ', ' + sub);
       const box = b.querySelector('.mi'), ic = icOf(m, st); let el = box.firstElementChild;
+      // 1.5.15: person: person.x (its photo) or picture: url as the icon; no photo = the normal icon
+      const ps = m.person && H.states[m.person], pic = m.picture || (ps && ps.attributes.entity_picture);
+      box.classList.toggle('ph', !!pic);
+      if (pic) { if (!el || el.className !== 'phi' || el._hvPic !== pic) { el = document.createElement('div'); el.className = 'phi'; el._hvPic = pic; el.style.backgroundImage = `url("${String(pic).replace(/"/g, '%22')}")`; box.replaceChildren(el); } return; }
+      if (el && el.className === 'phi') { box.replaceChildren(); el = null; }
       // picture icons (animara and other full-colour sets): bigger, no circle behind them. icon_style: circle | picture overrides
       box.classList.toggle('pic', m.icon_style ? m.icon_style === 'picture' : !/^(mdi|hass|hv):/.test(ic));
       // same order as the tiles: hass, stateObj and icon are set before the icon goes on the page (icon sets read them when it connects)
@@ -6428,6 +6435,7 @@ const HUB_APP_FIELDS = {
     entity: { label: 'Entity (input_boolean / switch to turn on and off, or a scene / script to run)', required: true, selector: { entity: { domain: ['input_boolean', 'switch', 'scene', 'script'] } } },
     name: { label: 'Name (empty = the entity name, e.g. "Away" for input_boolean.nothome)', selector: { text: {} } },
     icon: { label: 'Icon (empty = picked from the name)', selector: { icon: {} } },
+    person: { label: "Person (shows their photo instead of the icon)", selector: { entity: { domain: 'person' } } },
     icon_style: { label: 'Icon style (empty = picture for full-colour sets such as animara, circle for mdi)', selector: { select: { mode: 'dropdown', options: [{ value: 'circle', label: 'Glyph in a circle' }, { value: 'picture', label: 'Picture (bigger, no circle)' }] } } } } } } },
   exclusive: { label: 'Modes app: only one on at a time (turning one on turns the others off)', selector: { boolean: {} } },
   camera: { label: 'Modes app: camera under the buttons (optional)', selector: { entity: { domain: 'camera' } } } };
