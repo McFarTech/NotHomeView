@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.10';
+const HV_VERSION = '1.5.11';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6732,8 +6732,11 @@ function hvSetupBuild(data, url) {
     for (const i of [...lights.filter(i => st[i].state === 'on').slice(0, 2), ...climate.slice(0, 2)]) c.push({ entity: i, name: nm(i) });
     return { type: 'custom:homeview-chips-card', chips: c, grid_options: { columns: 'full', rows: 'auto' } }; };
   const TH = (data.themes || []).includes('HomeView Glass') ? { theme: 'HomeView Glass' } : {}; // the README's theme, when it is installed
-  const view = (path, title, icon, cards) => Object.assign({}, TH, { type: 'sections', max_columns: 1, dense_section_placement: true, title, path, icon, subview: true, back_path: P('main'), background: HV_SETUP_BG,
-    sections: [{ type: 'grid', cards: [chips(path), { type: 'custom:homeview-grid-card', full_width: true, portrait_shape: 'balanced', portrait_rows: 5, auto_rows: true, swipe_back: true, grid_options: { columns: 'full', rows: 'auto' }, cards }] }] });
+  // 1.5.11: a room page goes back (arrow and swipe down) to the Rooms page, the other pages to the Home Screen
+  const view = (path, title, icon, cards) => { const back = /^room-/.test(path) ? P('rooms') : P('main');
+    return Object.assign({}, TH, { type: 'sections', max_columns: 1, dense_section_placement: true, title, path, icon, subview: true, back_path: back, background: HV_SETUP_BG,
+    sections: [{ type: 'grid', cards: [chips(path), Object.assign({ type: 'custom:homeview-grid-card', full_width: true, portrait_shape: 'balanced', portrait_rows: 5, auto_rows: true, swipe_back: true },
+      back !== P('main') ? { swipe_back_path: back } : {}, { grid_options: { columns: 'full', rows: 'auto' }, cards })] }] }); };
   // Home page, laid out like the example: thermostat hero, clock, garage, lights, Home, music, scenes, calendar, tv, cameras, people, rooms
   const lit = [...lights.filter(i => st[i].state === 'on'), ...lights.filter(i => st[i].state !== 'on')]; // lights that are on first
   const home = [...heroC.slice(0, 1).map(i => tile(i, true)), clock(), ...garage.slice(0, 1).map(i => tile(i)), ...lit.slice(0, 2).map(i => tile(i)),
@@ -6810,10 +6813,17 @@ function hvSyncRoomsBuild(cur, data, url) {
       for (const ch of o.chips) { if (!ch || !ch.room_picker) continue; ch.rooms = ch.rooms || [];
         for (const r of newRooms) if (!ch.rooms.some(x => x && x.navigation_path === P(r.path))) ch.rooms.push({ name: r.title, icon: r.icon, navigation_path: P(r.path) }); } });
   }
+  // 1.5.11: room pages made before 1.5.11 went back to the Home Screen: point them (arrow + swipe down) at the Rooms page.
+  // Only the generated default (back to /<url>/main or none) is changed; a back path you set yourself is kept.
+  let backs = 0; if (views.some(v => v.path === 'rooms')) for (const fv of freshRooms) {
+    const ev = views.find(v => v.path === fv.path) || views.find(v => low(v.title) === low(fv.title) && gridOf(v)); if (!ev) continue;
+    if (!ev.back_path || ev.back_path === P('main')) { if (ev.back_path !== P('rooms')) { ev.back_path = P('rooms'); backs++; } }
+    const eg = gridOf(ev); if (eg && eg.swipe_back && (!eg.swipe_back_path || eg.swipe_back_path === P('main'))) eg.swipe_back_path = P('rooms'); }
   const tiles = added.reduce((s, a) => s + a.n, 0), parts = [];
   if (tiles) parts.push(`Added ${tiles} tile${tiles > 1 ? 's' : ''} (${added.map(a => `${a.room} ${a.n}`).join(', ')})`);
   if (newRooms.length) parts.push(`${newRooms.length} new room page${newRooms.length > 1 ? 's' : ''} (${newRooms.map(r => r.title).join(', ')})`);
-  return { config: cfg, changed: !!(tiles || newRooms.length), summary: { tiles, added, rooms: newRooms.map(r => r.title), text: parts.length ? parts.join(' and ') + '.' : 'Rooms are up to date.' } };
+  if (backs) parts.push(`${backs} room page${backs > 1 ? 's' : ''} now go${backs > 1 ? '' : 'es'} back to Rooms`);
+  return { config: cfg, changed: !!(tiles || newRooms.length || backs), summary: { tiles, added, rooms: newRooms.map(r => r.title), backs, text: parts.length ? parts.join(', ') + '.' : 'Rooms are up to date.' } };
 }
 // read the dashboard + registries, sync, save (the open dashboard updates at once). el: any element on that dashboard (optional)
 async function hvSyncRooms(hass, el) {

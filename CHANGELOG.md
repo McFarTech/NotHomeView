@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.11 – 2026-11-05
+
+### Fixes
+* **Room pages go back to the Rooms page** (back arrow and swipe down), not the Home Screen. New dashboards are made that way;
+  on an existing one, press **Sync rooms** once and it repoints the room pages (only the generated default; a back path you set
+  yourself is kept).
+
 ## 1.5.10 – 2026-11-05
 
 ### Changes
