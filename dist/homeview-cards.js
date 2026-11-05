@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.9';
+const HV_VERSION = '1.5.10';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6680,8 +6680,8 @@ function hvSetupBuild(data, url) {
   const all = Object.keys(st).filter(ok).sort((x, y) => (aName(areaOf(x)) || '\uffff').localeCompare(aName(areaOf(y)) || '\uffff') || nm(x).localeCompare(nm(y)));
   const dom = (d, f) => all.filter(i => i.startsWith(d + '.') && (!f || f(st[i].attributes || {}, i)));
   const dc = a => a.device_class || '';
-  // same card set-up as the example dashboard (examples/homeview-example-sections.yaml): 3x2 tiles, 6x4 heroes, day_light on
-  const G = (c, cols, rows) => Object.assign(c, { day_light: true, grid_options: { columns: cols || 3, rows: rows || 2 } });
+  // same card set-up as the example dashboard (examples/homeview-example-sections.yaml): 3x2 tiles, 6x4 heroes; 1.5.10: always dark (no day_light, Night theme)
+  const G = (c, cols, rows) => Object.assign(c, { grid_options: { columns: cols || 3, rows: rows || 2 } });
   const ICON = { temperature: 'mdi:thermometer', humidity: 'mdi:water-percent', lock: 'mdi:lock', alarm_control_panel: 'mdi:shield-home', switch: 'mdi:power-socket', fan: 'mdi:fan', vacuum: 'mdi:robot-vacuum', humidifier: 'mdi:air-humidifier', water_heater: 'mdi:water-boiler', valve: 'mdi:valve',
     door: 'mdi:door', garage_door: 'mdi:garage', window: 'mdi:window-closed-variant', opening: 'mdi:door', motion: 'mdi:motion-sensor', occupancy: 'mdi:home-account', presence: 'mdi:home-account', smoke: 'mdi:smoke-detector',
     gas: 'mdi:gas-cylinder', carbon_monoxide: 'mdi:molecule-co', moisture: 'mdi:water-alert', tamper: 'mdi:shield-alert', safety: 'mdi:shield-alert', vibration: 'mdi:vibrate', blind: 'mdi:blinds', shade: 'mdi:roller-shade',
@@ -6730,7 +6730,7 @@ function hvSetupBuild(data, url) {
     if (lights.length) { const on = lights.filter(i => st[i].state === 'on').length; // "Lights on" count, like the example's count chip (no helper sensor needed)
       c.push({ name: 'Lights on', icon: 'mdi:lightbulb-group', count_entities: lights.slice(0, 60), tap_action: { action: 'navigate', navigation_path: P('lights') } }); }
     for (const i of [...lights.filter(i => st[i].state === 'on').slice(0, 2), ...climate.slice(0, 2)]) c.push({ entity: i, name: nm(i) });
-    return { type: 'custom:homeview-chips-card', day_light: true, chips: c, grid_options: { columns: 'full', rows: 'auto' } }; };
+    return { type: 'custom:homeview-chips-card', chips: c, grid_options: { columns: 'full', rows: 'auto' } }; };
   const TH = (data.themes || []).includes('HomeView Glass') ? { theme: 'HomeView Glass' } : {}; // the README's theme, when it is installed
   const view = (path, title, icon, cards) => Object.assign({}, TH, { type: 'sections', max_columns: 1, dense_section_placement: true, title, path, icon, subview: true, back_path: P('main'), background: HV_SETUP_BG,
     sections: [{ type: 'grid', cards: [chips(path), { type: 'custom:homeview-grid-card', full_width: true, portrait_shape: 'balanced', portrait_rows: 5, auto_rows: true, swipe_back: true, grid_options: { columns: 'full', rows: 'auto' }, cards }] }] });
@@ -6750,7 +6750,8 @@ function hvSetupBuild(data, url) {
   const apps = [{ name: 'Home', icon: 'hv:home', color_from: '#ffffff', color_to: '#ededf2', kind: 'navigate', navigation_path: 'home' }];
   for (const k of ['security', 'media', 'weather', 'lights', 'climate', 'garage', 'calendar', 'rooms']) { if (apps.length >= 4) break; const a = app(k); if (a) apps.push(a); }
   // Home Screen, laid out like the NotHomeView home screen: wallpaper, greeting, apps, photos, now playing, house tile, calendar
-  const hub = { type: 'custom:homeview-hub-card', full_width: true, theme: 'auto', apps, wallpaper: HV_SETUP_WALL, bg_transparency: 80, photo_size: 'square', calendar_rows: '2', grid_options: { columns: 'full', rows: 'auto' } };
+  // 1.5.10: no theme key = Night (always dark)
+  const hub = { type: 'custom:homeview-hub-card', full_width: true, apps, wallpaper: HV_SETUP_WALL, bg_transparency: 80, photo_size: 'square', calendar_rows: '2', grid_options: { columns: 'full', rows: 'auto' } };
   if (weather) hub.weather_entity = weather; if (people.length) hub.fallback_person = people[0];
   if (cals.length) hub.calendar_entities = cals.slice(0, 4); else hub.show_calendar = false;
   const house = { type: 'custom:homeview-house-card' }; if (weather) house.weather = weather; if (garage[0]) house.garage = garage[0]; if (heroC[0]) house.climate = heroC[0];

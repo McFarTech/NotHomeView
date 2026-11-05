@@ -84,7 +84,6 @@ views:
       side_tiles:
       - size: square
       - size: square
-      theme: day
     - type: custom:button-card
       template: homeview_styles
       variables:
@@ -127,7 +126,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Hub
         icon: mdi:apps
@@ -1107,7 +1105,6 @@ views:
           columns: 6
           rows: 4
         room: Basement
-        day_light: true
       - type: clock
         clock_style: analog
         clock_size: small
@@ -1131,7 +1128,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
         chooser: true
         entity_b: cover.example_garage_door_2
         door_name: Garage Door
@@ -1145,7 +1141,6 @@ views:
         name: Lights
         room: Basement
         show_state: true
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_ceiling_lights
         name: Pot Lights
@@ -1154,7 +1149,6 @@ views:
           columns: 3
           rows: 2
         room: Living Room
-        day_light: true
       - type: custom:homeview-nav-card
         name: Home
         icon: mdi:home-outline
@@ -1254,7 +1248,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - np_show_extra: false
         type: custom:homeview-music-card
         entity: media_player.example_bedroom_speaker
@@ -1270,7 +1263,6 @@ views:
         - media_player.example_basement_speaker
         - media_player.example_living_room_tv
         - media_player.example_game_room_tv
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_living_room_bright
         name: Good Morning
@@ -1278,7 +1270,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_good_night
         name: Good Night
@@ -1287,7 +1278,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-calendar-card
         title: Calendar
         icon: mdi:calendar
@@ -1323,7 +1313,6 @@ views:
         grid_options:
           columns: 6
           rows: 4
-        day_light: true
       - type: custom:homeview-tv-card
         entity: media_player.example_living_room_tv
         entities:
@@ -1339,7 +1328,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-battery-card
         entity: sensor.example_car_battery
         grid_options:
@@ -1347,7 +1335,6 @@ views:
           rows: 2
         name: Car
         charging_entity: sensor.example_car_charger_power
-        day_light: true
       - size: 2x6
         type: custom:homeview-camera-card
         entity: camera.example_backyard
@@ -1359,7 +1346,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-person-card
         entity: person.example_jamie
         name: Jamie
@@ -1368,7 +1354,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-person-card
         entity: person.example_sam
         name: Sam
@@ -1377,7 +1362,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-entity-card
         entity: sensor.example_lights_on_count
         name: House
@@ -1476,7 +1460,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-group-card
         name: Living Room
         icon: mdi:sofa-outline
@@ -1492,7 +1475,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-group-card
         name: Basement
         icon: mdi:home-floor-b
@@ -1507,7 +1489,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-entity-card
         entity: sensor.example_washer_status
         name: Laundry
@@ -1522,7 +1503,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-entity-card
         entity: sensor.example_packages_in_transit
         name: Packages
@@ -1534,7 +1514,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-nav-card
         name: Climate
         icon: mdi:home-thermometer-outline
@@ -1543,7 +1522,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       portrait_rows: 5
       auto_rows: true
       swipe_back: true
@@ -1583,7 +1561,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -2503,7 +2480,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - size: 2x6
         type: custom:homeview-camera-card
         entity: camera.example_backyard
@@ -2518,7 +2494,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
         chooser: true
         entity_b: cover.example_garage_door_2
         door_name: Garage Door
@@ -2530,7 +2505,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:car-key
-        day_light: true
       - type: custom:homeview-entity-card
         entity: lock.example_car_charge_cable
         name: Charge Cable
@@ -2538,7 +2512,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:ev-plug-type2
-        day_light: true
       - type: custom:homeview-entity-card
         entity: switch.example_backyard_motion_detection
         name: Motion detection
@@ -2546,7 +2519,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:motion-sensor
-        day_light: true
       - type: custom:homeview-entity-card
         entity: cover.example_car_frunk
         name: Frunk
@@ -2554,7 +2526,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:car-select
-        day_light: true
       - type: custom:homeview-entity-card
         entity: cover.example_car_trunk
         name: Trunk
@@ -2562,7 +2533,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:car-back
-        day_light: true
       - type: custom:homeview-battery-card
         entity: sensor.example_car_battery
         grid_options:
@@ -2570,7 +2540,6 @@ views:
           rows: 2
         name: Car
         charging_entity: sensor.example_car_charger_power
-        day_light: true
       swipe_back: true
     - type: custom:homeview-edit-button-card
       position: top-right
@@ -2608,7 +2577,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -3528,7 +3496,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_living_room
         name: Thermostat
@@ -3541,7 +3508,6 @@ views:
           columns: 6
           rows: 4
         room: Living / Entry
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_living_room_lamps
         name: Lamps
@@ -3549,7 +3515,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:lamps-outline
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_ceiling_lights
         name: Pot Lights
@@ -3557,7 +3522,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:ceiling-light
-        day_light: true
       - type: custom:homeview-tv-card
         entity: media_player.example_living_room_tv
         entities:
@@ -3571,7 +3535,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - np_show_extra: false
         type: custom:homeview-music-card
         entity: media_player.example_living_room_speaker
@@ -3584,7 +3547,6 @@ views:
           rows: 2
         show_artist: true
         entities: []
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_lamp_1
         name: Lamp 1
@@ -3592,7 +3554,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:floor-lamp
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_lamp_2
         name: Lamp 2
@@ -3600,7 +3561,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:floor-lamp
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_living_room_bright
         name: Bright
@@ -3608,7 +3568,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_living_room_relax
         name: Relax
@@ -3616,7 +3575,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_living_room_movie
         name: Movie
@@ -3624,7 +3582,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_living_room_nightlight
         name: Nightlight
@@ -3632,7 +3589,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -3669,7 +3625,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -4589,7 +4544,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_basement
         name: Thermostat
@@ -4602,7 +4556,6 @@ views:
           columns: 6
           rows: 4
         room: Basement
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_basement_lights
         name: Lights
@@ -4610,7 +4563,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:floor-lamp
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_reading_lamp
         name: Reading Lamp
@@ -4618,7 +4570,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:floor-lamp-outline
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_floor_lamp
         name: Floor Lamp
@@ -4626,7 +4577,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:lamp-outline
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_lamp_3
         name: Lamp 2
@@ -4634,7 +4584,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:lamp
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_basement_lamp
         name: Living Lamp
@@ -4642,7 +4591,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:floor-lamp
-        day_light: true
       - type: custom:homeview-tv-card
         entity: media_player.example_basement_tv
         entities:
@@ -4656,7 +4604,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - np_show_extra: false
         type: custom:homeview-music-card
         entity: media_player.example_basement_speaker
@@ -4669,7 +4616,6 @@ views:
           rows: 2
         show_artist: true
         entities: []
-        day_light: true
       - type: custom:homeview-entity-card
         entity: media_player.example_game_console
         name: PlayStation 5
@@ -4677,7 +4623,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:sony-playstation
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -4714,7 +4659,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -5634,7 +5578,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_bedroom
         name: Bedroom
@@ -5642,7 +5585,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:ceiling-light
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_bedside_lamp
         name: Bed
@@ -5650,7 +5592,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:bed-outline
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_desk_lamp
         name: Desk Lamp
@@ -5658,7 +5599,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:lamp
-        day_light: true
       - type: custom:homeview-tv-card
         entity: media_player.example_bedroom_tv
         entities: []
@@ -5671,7 +5611,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_bedroom_bright
         name: Bright
@@ -5679,7 +5618,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_bedroom_relax
         name: Relax
@@ -5687,7 +5625,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-scene-card
         entity: scene.example_bedroom_nightlight
         name: Nightlight
@@ -5695,7 +5632,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -5732,7 +5668,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -6652,7 +6587,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_office
         name: Thermostat
@@ -6665,7 +6599,6 @@ views:
           columns: 6
           rows: 4
         room: Office
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_strip_1
         name: White 1
@@ -6673,7 +6606,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:desk-lamp
-        day_light: true
       - type: custom:homeview-light-card
         entity: light.example_strip_2
         name: White 2
@@ -6681,7 +6613,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:desk-lamp
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -6718,7 +6649,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -7638,7 +7568,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_mudroom
         name: Thermostat
@@ -7651,7 +7580,6 @@ views:
           columns: 6
           rows: 4
         room: Mudroom
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_bathroom
         name: Mudroom Bath
@@ -7664,7 +7592,6 @@ views:
           columns: 3
           rows: 2
         room: Bathroom
-        day_light: true
         compact: true
       - type: custom:homeview-entity-card
         entity: switch.example_washer_power
@@ -7673,7 +7600,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:washing-machine
-        day_light: true
       - type: custom:homeview-entity-card
         entity: sensor.example_washer_remaining_time
         name: Washer
@@ -7681,7 +7607,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:timer-outline
-        day_light: true
       - type: custom:homeview-entity-card
         entity: switch.example_dryer_power
         name: Dryer
@@ -7689,7 +7614,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:tumble-dryer
-        day_light: true
       - type: custom:homeview-entity-card
         entity: sensor.example_dryer_remaining_time
         name: Dryer
@@ -7697,7 +7621,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:timer-outline
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -7734,7 +7657,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -8654,7 +8576,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_dining_room
         name: Thermostat
@@ -8667,7 +8588,6 @@ views:
           columns: 6
           rows: 4
         room: Dining Room
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -8704,7 +8624,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -9624,7 +9543,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_upstairs_bathroom
         name: Bathroom
@@ -9637,7 +9555,6 @@ views:
           columns: 6
           rows: 4
         room: Upstairs
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_guest_bedroom
         name: Guest Bedroom
@@ -9650,7 +9567,6 @@ views:
           columns: 6
           rows: 4
         room: Upstairs
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -9687,7 +9603,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -10607,7 +10522,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - type: custom:homeview-garage-card
         entity: cover.example_garage_door
         name: Garage
@@ -10616,7 +10530,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
         chooser: true
         entity_b: cover.example_garage_door_2
         door_name: Garage Door
@@ -10628,7 +10541,6 @@ views:
           rows: 2
         name: Car
         charging_entity: sensor.example_car_charger_power
-        day_light: true
       - type: custom:homeview-thermostat-card
         entity: climate.example_car
         name: Car
@@ -10641,7 +10553,6 @@ views:
           columns: 3
           rows: 2
         room: Climate
-        day_light: true
         compact: true
     - type: custom:homeview-edit-button-card
       position: top-right
@@ -10679,7 +10590,6 @@ views:
         columns: full
         rows: auto
     - type: custom:homeview-chips-card
-      day_light: true
       chips:
       - name: Home
         icon: mdi:home-outline
@@ -11599,7 +11509,6 @@ views:
         grid_options:
           columns: 3
           rows: 2
-        day_light: true
       - size: 2x6
         type: custom:homeview-camera-card
         entity: camera.example_backyard
@@ -11613,7 +11522,6 @@ views:
           columns: 3
           rows: 2
         icon: mdi:motion-sensor
-        day_light: true
       - np_show_extra: false
         type: custom:homeview-music-card
         entity: media_player.example_patio_speaker
@@ -11626,7 +11534,6 @@ views:
           rows: 2
         show_artist: true
         entities: []
-        day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: dark
@@ -11681,7 +11588,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11702,7 +11608,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11723,7 +11628,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11744,7 +11648,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11765,7 +11668,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11786,7 +11688,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11807,7 +11708,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11828,7 +11728,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11849,7 +11748,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11870,7 +11768,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11891,7 +11788,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11912,7 +11808,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11933,7 +11828,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11954,7 +11848,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -11975,7 +11868,6 @@ views:
           columns: 6
           rows: auto
         aspect: '1.5'
-        day_light: true
       grid_options:
         columns: 6
         rows: auto
@@ -12000,7 +11892,6 @@ views:
           columns: 12
           rows: auto
         aspect: '2.4'
-        day_light: true
       grid_options:
         columns: 12
         rows: auto
@@ -12052,7 +11943,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_dining_room
       name: Dining Room
@@ -12064,7 +11954,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_mudroom
       name: Mudroom
@@ -12076,7 +11965,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_bathroom
       name: Mudroom Bathroom
@@ -12088,7 +11976,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_upstairs_bathroom
       name: Upstairs Bathroom
@@ -12100,7 +11987,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_office
       name: Office
@@ -12112,7 +11998,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_guest_bedroom
       name: Guest Bedroom
@@ -12124,7 +12009,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_basement
       name: Basement
@@ -12136,7 +12020,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-thermostat-card
       entity: climate.example_car
       name: Car Climate
@@ -12148,7 +12031,6 @@ views:
         columns: 6
         rows: auto
       aspect: '1.12'
-      day_light: true
     - type: custom:homeview-edit-button-card
       position: top-right
       style: auto

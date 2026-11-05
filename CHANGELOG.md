@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.10 – 2026-11-05
+
+### Changes
+* **Always dark by default.** *Create NotHomeView dashboard* no longer makes tiles and chip bars switch to the white light style while
+  the sun is up (no `day_light: true`), and the Home Screen card gets no `theme: auto`, so device pages stay Night (dark glass).
+  The example dashboards match. Day / Auto are still there in the pencil menu and the editors for anyone who wants them.
+
 ## 1.5.9 – 2026-11-05
 
 ### New features
