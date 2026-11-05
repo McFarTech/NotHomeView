@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.12';
+const HV_VERSION = '1.5.13';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -3907,10 +3907,19 @@ const hvEcl = { host: null, sr: null, lay: null, ctl: new WeakMap(), timer: null
     const root = hvFindRoot(g), lv = root && root.lovelace; if (!lv) return;
     const sig = JSON.stringify((g._config && g._config.cards) || []), hit = hvGridAt(lv.config, g), at = hit.find(x => x.v === root._curView) || hit[0];
     HV_TAP.cfg = sig; HV_TAP.i = i; HV_TAP.t = Date.now();
+    // 1.5.13: the section this Page Grid sits in, read from the page itself (its view / section numbers), so the right card is
+    // edited even when the saved copy differs or the page's view number isn't known
+    let sec = null; for (let n = g, j = 0; n && j < 80; j++) { if (n.localName === 'hui-section') { sec = n; break; } n = n.parentNode || n.host; }
+    if (sec && typeof sec.index === 'number' && typeof sec.viewIndex === 'number') { const vw = (lv.config.views || [])[sec.viewIndex] || {}, cs = ((vw.sections || [])[sec.index] || {}).cards || [];
+      const node = hvGridGuess({ views: [{ sections: [{ cards: cs }] }] }, g, 0), ci = node ? cs.indexOf(node) : -1;
+      if (ci >= 0) { const p3 = [sec.viewIndex, sec.index, ci], le = sec._layoutElement;
+        if (le) { le.dispatchEvent(new CustomEvent('ll-edit-card', { detail: { path: p3 } })); return; }
+        g.dispatchEvent(new CustomEvent('ll-edit-card', { detail: { path: p3 }, bubbles: true, composed: true })); return; } }
     let path = at && hvCardPath(lv.config, o => o === at.node, root._curView);
     if (!path) { const node = hvGridGuess(lv.config, g, root._curView); if (node) path = hvCardPath(lv.config, o => o === node, root._curView); } // 1.5.12: saved copy differs from the one on screen
     if (path && hvOpenCardEditor(root, path)) return;
-    console.warn('NotHomeView: tile editor not opened', { exact: hit.length, path, view: root._curView, tiles: ((g._config && g._config.cards) || []).length });
+    if (path) { g.dispatchEvent(new CustomEvent('ll-edit-card', { detail: { path }, bubbles: true, composed: true })); return; }
+    console.warn('NotHomeView: tile editor not opened', { exact: hit.length, path, view: root._curView, section: sec && [sec.viewIndex, sec.index], tiles: ((g._config && g._config.cards) || []).length });
     hvToast(path ? 'Could not open the editor here: use the pencil at the top of the page, then edit this Page Grid' : 'This Page Grid was not found in the saved dashboard: reload the page and try again'); } };
 /* 1.5.12: find the Page Grid on screen in the saved dashboard when its tiles aren't an exact match (e.g. the saved copy was changed by
    Sync rooms or another device since the page was drawn): the Page Grid on the current page that shares the most tiles with it */

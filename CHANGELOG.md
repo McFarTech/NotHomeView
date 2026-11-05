@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.13 – 2026-11-05
+
+### Fixes
+* **Page Grid: ⋯ → Edit** finds the section the Page Grid sits in from the page itself and opens Home Assistant's card editor there
+  (fixes "Could not open the editor here" on some pages).
+
 ## 1.5.12 – 2026-11-05
 
 ### Fixes
