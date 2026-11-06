@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.18 – 2026-11-06
+
+### Fixes
+* Sensor-only areas: diagnostic sensors count too (integrations such as HASS.Agent mark all their sensors diagnostic, so a Servers
+  area got no page). Hidden or disabled sensors are still left out.
+
 ## 1.5.17 – 2026-11-06
 
 ### Changes

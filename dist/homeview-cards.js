@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.17';
+const HV_VERSION = '1.5.18';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6718,6 +6718,7 @@ function hvSetupBuild(data, url) {
   const areas = new Map((data.areas || []).map(a => [a.area_id || a.id, a]));
   const ok = id => { const s = st[id]; if (!s || s.state === 'unavailable') return false; const r = reg.get(id);
     if (r && (r.hidden_by || r.disabled_by || r.hidden === true || r.entity_category)) return false; return !(s.attributes && s.attributes.hidden === true); };
+  const okLoose = id => { const s = st[id], r = reg.get(id); if (!s || s.state === 'unavailable') return false; if (r && (r.hidden_by || r.disabled_by || r.hidden === true)) return false; return !(s.attributes && s.attributes.hidden === true); }; // 1.5.18
   const areaOf = id => { const r = reg.get(id); if (!r) return null; const d = r.device_id && dev.get(r.device_id); const a = r.area_id || (d && d.area_id) || null; return a && areas.has(a) ? a : null; };
   const nm = id => { const a = (st[id] && st[id].attributes) || {}; return String(a.friendly_name || id.split('.')[1].replace(/_/g, ' ')); };
   const aName = a => (areas.get(a) || {}).name || '';
@@ -6752,7 +6753,8 @@ function hvSetupBuild(data, url) {
   const ROOM_D = /^(light|switch|fan|climate|cover|lock|media_player|camera|humidifier|vacuum|valve|water_heater)\./;
   // 1.5.17: an area with nothing to control but with sensors (e.g. a server's RAID / temperature readings) gets a page of its sensors
   const rooms = []; for (const [aid, a] of areas) { let ids = all.filter(i => ROOM_D.test(i) && areaOf(i) === aid), info = false;
-    if (!ids.length) { ids = all.filter(i => /^(sensor|binary_sensor)\./.test(i) && areaOf(i) === aid).slice(0, 24); info = true; }
+    // diagnostic / config sensors count here (many integrations, e.g. HASS.Agent, mark everything diagnostic); hidden or disabled ones don't
+    if (!ids.length) { ids = Object.keys(st).filter(i => /^(sensor|binary_sensor)\./.test(i) && areaOf(i) === aid && okLoose(i)).sort((x, y) => nm(x).localeCompare(nm(y))).slice(0, 24); info = true; }
     if (ids.length) rooms.push({ aid, name: a.name || aid, icon: a.icon || (info ? 'mdi:chart-box-outline' : 'mdi:sofa-outline'), ids, path: 'room-' + hvSlug(aid) }); }
   rooms.sort((x, y) => x.name.localeCompare(y.name));
   const roomTile = r => { const L = r.ids.filter(i => i.startsWith('light.'));
