@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.16';
+const HV_VERSION = '1.5.17';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -6750,7 +6750,10 @@ function hvSetupBuild(data, url) {
   const garage = covers.filter(i => /garage|gate/.test(dc(st[i].attributes || {})));
   const music = players.filter(i => dc(st[i].attributes || {}) !== 'tv'), player = music[0] || players[0];
   const ROOM_D = /^(light|switch|fan|climate|cover|lock|media_player|camera|humidifier|vacuum|valve|water_heater)\./;
-  const rooms = []; for (const [aid, a] of areas) { const ids = all.filter(i => ROOM_D.test(i) && areaOf(i) === aid); if (ids.length) rooms.push({ aid, name: a.name || aid, icon: a.icon || 'mdi:sofa-outline', ids, path: 'room-' + hvSlug(aid) }); }
+  // 1.5.17: an area with nothing to control but with sensors (e.g. a server's RAID / temperature readings) gets a page of its sensors
+  const rooms = []; for (const [aid, a] of areas) { let ids = all.filter(i => ROOM_D.test(i) && areaOf(i) === aid), info = false;
+    if (!ids.length) { ids = all.filter(i => /^(sensor|binary_sensor)\./.test(i) && areaOf(i) === aid).slice(0, 24); info = true; }
+    if (ids.length) rooms.push({ aid, name: a.name || aid, icon: a.icon || (info ? 'mdi:chart-box-outline' : 'mdi:sofa-outline'), ids, path: 'room-' + hvSlug(aid) }); }
   rooms.sort((x, y) => x.name.localeCompare(y.name));
   const roomTile = r => { const L = r.ids.filter(i => i.startsWith('light.'));
     return L.length ? G({ type: 'custom:homeview-group-card', name: r.name, icon: r.icon, entities: L, label: '{count} lights on', tap_action: { action: 'navigate', navigation_path: P(r.path) } })

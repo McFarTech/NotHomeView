@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.17 – 2026-11-06
+
+### Changes
+* **Areas with only sensors get a room page** (setup and Sync rooms): an area with nothing to switch or control but with sensors
+  (e.g. a server's RAID and temperature readings) gets a page of up to 24 sensor tiles. Areas with lights, switches etc. are
+  unchanged (no sensors added).
+
 ## 1.5.16 – 2026-11-05
 
 ### Changes
