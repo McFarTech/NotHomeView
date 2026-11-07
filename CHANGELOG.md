@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.20 – 2026-11-07
+
+### New features
+* **Thermostat tile: `show_status: true`** shows the full *Heating · Now 20.8° · 71% humidity* line on small 3×2 tiles too.
+
 ## 1.5.19 – 2026-11-07
 
 ### New features
