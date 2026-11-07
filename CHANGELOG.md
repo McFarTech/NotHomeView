@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.22 – 2026-11-07
+
+### Changes
+* Entity tile with a thermostat: *Heating*, *Now 18.4°* and *Humidity 98%* on separate lines.
+
 ## 1.5.21 – 2026-11-07
 
 ### Changes
