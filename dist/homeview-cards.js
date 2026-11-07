@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.18';
+const HV_VERSION = '1.5.19';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -627,6 +627,7 @@ ha-card{cursor:pointer}
       setTimeout(() => { if (this._pending === v) { this._pending = null; this._sig = null; this._render(); } }, 4000);
     }, 600);
   }
+  watched() { return super.watched().concat(this._config && this._config.humidity_entity ? [this._config.humidity_entity] : []); }
   update() {
     const c = this._config, s = this.stateObj, a = s ? s.attributes : {};
     const g = c.grid_options || {}, small = !!c.compact || (typeof g.rows === 'number' && g.rows <= 2);
@@ -637,8 +638,11 @@ ha-card{cursor:pointer}
     const cur = a.current_temperature != null ? (Math.round(a.current_temperature * 10) / 10) + '°' : '';
     const mode = !s ? '' : s.state === 'off' ? 'Off' : a.hvac_action === 'heating' ? 'Heating' : a.hvac_action === 'cooling' ? 'Cooling'
       : ({ heat: 'Heat', cool: 'Cool', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' }[s.state] || s.state);
+    // 1.5.19: show_humidity: the room's humidity under the temperature (current_humidity, or humidity_entity), also on small tiles
+    let hum = ''; if (c.show_humidity || c.humidity_entity) { const hs = c.humidity_entity && this._hass.states[c.humidity_entity];
+      const hv = hs ? parseFloat(hs.state) : parseFloat(a.current_humidity); if (!isNaN(hv)) hum = Math.round(hv) + '% humidity'; }
     this._root.querySelector('.temp').innerHTML = `<div class="big">${i}<span class="dec">${f}</span><span class="deg">°</span></div>` +
-      (small ? '' : `<div class="sub">${esc(mode)}${cur ? ' · Now ' + cur : ''}</div>`);
+      (small ? (hum ? `<div class="sub">${esc(hum)}</div>` : '') : `<div class="sub">${esc(mode)}${cur ? ' · Now ' + cur : ''}${hum ? ' · ' + esc(hum) : ''}</div>`);
     this._root.querySelector('.n').textContent = c.name != null ? c.name : 'Thermostat';
     const l = this._root.querySelector('.l'); l.textContent = c.room || ''; l.style.display = small ? 'none' : '';
     const off = !s || isNaN(parseFloat(a.temperature));
@@ -1028,7 +1032,7 @@ const COLORS = { type: 'expandable', name: '', flatten: true, title: 'Colours (o
 const ACTIONS = (tap, hold) => ({ type: 'expandable', name: '', flatten: true, title: 'Interactions', icon: 'mdi:gesture-tap', schema: [
   { name: 'tap_action', selector: ACT(tap) }, { name: 'hold_action', selector: ACT(hold) }] });
 const LABELS = { entity: 'Entity', entities: 'Entities', name: 'Name', room: 'Room / subtitle', step: 'Set-point step', icon: 'Icon', label: 'Sub-label (overrides state)',
-  attribute: 'Show attribute instead of state', show_state: 'Show state', active: 'Lavender "active" tint', layout: 'Style (tile or button)', compact: 'Compact (1x1 tile)',
+  attribute: 'Show attribute instead of state', show_state: 'Show state', active: 'Lavender "active" tint', layout: 'Style (tile or button)', compact: 'Compact (1x1 tile)', show_humidity: 'Show humidity', humidity_entity: 'Humidity sensor (empty = the thermostat\'s own)',
   text_color: 'Text colour (CSS)', icon_color: 'Icon colour (CSS)', accent_color: 'Active / accent tint (CSS)', background_color: 'Background tint (CSS)',
   tap_action: 'Tap action', hold_action: 'Hold action', confirm: 'Ask for confirmation', confirm_text: 'Confirmation text', show_media: 'Show now playing',
   show_artist: 'Show artist', unit: 'Word after the count (e.g. "on", "lights on")', none_label: 'Text when none are on',
@@ -1041,6 +1045,7 @@ HVThermostatCard.schema = [
   { name: 'entity', required: true, selector: { entity: { domain: 'climate' } } },
   { type: 'grid', name: '', schema: [{ name: 'name', selector: { text: {} } }, { name: 'room', selector: { text: {} } }] },
   { type: 'grid', name: '', schema: [{ name: 'step', selector: { number: { min: 0.1, max: 5, step: 0.1, mode: 'box', unit_of_measurement: '°' } } }, { name: 'compact', selector: { boolean: {} } }] },
+  { type: 'grid', name: '', schema: [{ name: 'show_humidity', selector: { boolean: {} } }, { name: 'humidity_entity', selector: { entity: { domain: 'sensor', device_class: 'humidity' } } }] },
   COLORS, ACTIONS('more-info', 'more-info')];
 const ENTITY_SCHEMA = (domain, tap, hold, extra = []) => [
   { name: 'entity', required: true, selector: { entity: domain ? { domain } : {} } },

@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.19 – 2026-11-07
+
+### New features
+* **Thermostat tile: humidity** (`show_humidity: true`, or `humidity_entity: sensor.x`): the room's humidity under the temperature,
+  also on small 3×2 tiles.
+
 ## 1.5.18 – 2026-11-06
 
 ### Fixes
