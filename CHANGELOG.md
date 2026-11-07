@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.21 – 2026-11-07
+
+### Changes
+* **Entity tile with a thermostat** shows *Heating · Now 18.4°* (heating / idle / off and the current temperature) instead of just
+  *Heat*; `show_humidity: true` adds *· 98% humidity* (or `humidity_entity`). A `label` or `attribute` still overrides it.
+
 ## 1.5.20 – 2026-11-07
 
 ### New features

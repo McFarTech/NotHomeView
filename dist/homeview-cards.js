@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.20';
+const HV_VERSION = '1.5.21';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -660,6 +660,13 @@ class HVEntityCard extends HVBase {
     const c = this._config, s = this.stateObj;
     const noAttr = c.attribute && c.empty_label && (!s || s.attributes[c.attribute] == null || s.attributes[c.attribute] === '');
     let sec = c.label != null && c.label !== '' ? fmtTpl(this._hass, c.label, s) : noAttr ? c.empty_label : (c.attribute ? fmtAttr(this._hass, s, c.attribute) : fmtState(this._hass, s));
+    // 1.5.21: a thermostat shows "Heating · Now 18.4°" (+ " · 98% humidity" with show_humidity) instead of just "Heat"
+    if (s && /^climate\./.test(c.entity) && (c.label == null || c.label === '') && !c.attribute && !UNAVAILABLE.includes(s.state)) { const a = s.attributes;
+      const mode = s.state === 'off' ? 'Off' : a.hvac_action === 'heating' ? 'Heating' : a.hvac_action === 'cooling' ? 'Cooling' : a.hvac_action === 'idle' ? 'Idle'
+        : ({ heat: 'Heat', cool: 'Cool', heat_cool: 'Auto', auto: 'Auto', dry: 'Dry', fan_only: 'Fan' }[s.state] || fmtState(this._hass, s));
+      const cur = a.current_temperature != null ? (Math.round(a.current_temperature * 10) / 10) + '°' : '';
+      let hum = ''; if (c.show_humidity || c.humidity_entity) { const hs = c.humidity_entity && this._hass.states[c.humidity_entity]; const hv = hs ? parseFloat(hs.state) : parseFloat(a.current_humidity); if (!isNaN(hv)) hum = Math.round(hv) + '% humidity'; }
+      sec = [mode, cur && 'Now ' + cur, hum].filter(Boolean).join(' · '); }
     if (c.show_state === false && !c.label) sec = '';
     const active = c.active === 'always' ? true : c.active === 'never' ? false
       : c.active === 'running' ? [s, ...tplEntities(c.label).map(e => this._hass.states[e])].some(isRunning) : stateActive(s);
@@ -668,7 +675,7 @@ class HVEntityCard extends HVBase {
   // 1.5.1: extra lines under the state, one per entity: "Energy 1.00 kWh". Name: the detail's own `name`, else its friendly name
   // without the tile's name in front ("DishWasher Energy" on the DishWasher tile -> "Energy")
   _detailList() { return [].concat(this._config.details || []).map(d => typeof d === 'string' ? { entity: d } : d).filter(d => d && d.entity); }
-  watched() { return super.watched().concat(this._detailList().map(d => d.entity)); }
+  watched() { return super.watched().concat(this._detailList().map(d => d.entity), this._config && this._config.humidity_entity ? [this._config.humidity_entity] : []); }
   _details() { const h = this._hass, s = this.stateObj, pre = [this.name(), s && s.attributes.friendly_name].filter(Boolean).map(x => String(x).trim().toLowerCase());
     return this._detailList().map(d => { const ds = h.states[d.entity];
       let n = d.name; if (n == null || n === '') { n = ds ? String(ds.attributes.friendly_name || d.entity) : d.entity;
@@ -1056,6 +1063,7 @@ const ENTITY_SCHEMA = (domain, tap, hold, extra = []) => [
 HVEntityCard.schema = ENTITY_SCHEMA(null, 'more-info', 'more-info', [
   { type: 'grid', name: '', schema: [{ name: 'label', selector: { text: {} } }, { name: 'attribute', selector: { attribute: {} }, context: { filter_entity: 'entity' } }] },
   { name: 'empty_label', selector: { text: {} } },
+  { type: 'grid', name: '', schema: [{ name: 'show_humidity', selector: { boolean: {} } }, { name: 'humidity_entity', selector: { entity: { domain: 'sensor', device_class: 'humidity' } } }] },
   { name: 'details', selector: { object: { multiple: true, label_field: 'name', description_field: 'entity', fields: {
     entity: { label: 'Entity (e.g. its power or energy sensor)', required: true, selector: { entity: {} } },
     name: { label: 'Name (empty = the entity name without the tile name, e.g. "Energy")', selector: { text: {} } },
