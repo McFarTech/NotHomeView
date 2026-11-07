@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.22';
+const HV_VERSION = '1.5.23';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -451,8 +451,8 @@ ha-ripple{--ha-ripple-color:var(--hv-text,#fff);--ha-ripple-hover-opacity:.04;--
 .active .p{color:var(--hv-text-on,#fff)} .active .s{color:var(--hv-text2-on,rgba(255,255,255,.8))}
 .d{display:flex;justify-content:center;align-items:baseline;gap:.4em;white-space:nowrap;overflow:hidden;line-height:1.25;font-size:min(8.6cqh,5.3cqw);font-weight:500;color:var(--hv-text2,rgba(255,255,255,.66))}
 .p + .d,.s + .d{margin-top:.35em} .dv{font-weight:650;color:var(--hv-text,#fff);font-variant-numeric:tabular-nums} .active .d{color:var(--hv-text2-on,rgba(255,255,255,.8))} .active .dv{color:var(--hv-text-on,#fff)}
-.c.det{gap:6px} .c.det .ic{width:min(24cqh,18cqw);height:min(24cqh,18cqw)} .c.det .ic ha-state-icon,.c.det .ic ha-icon{--mdc-icon-size:min(21cqh,16cqw);width:min(21cqh,16cqw);height:min(21cqh,16cqw)}
-:host([floor]) .d{font-size:max(10px,min(8.6cqh,7cqw))} :host([floor]) .c.det .ic{width:min(24cqh,22cqw);height:min(24cqh,22cqw)} :host([floor]) .c.det .ic ha-state-icon,:host([floor]) .c.det .ic ha-icon{--mdc-icon-size:min(21cqh,19cqw);width:min(21cqh,19cqw);height:min(21cqh,19cqw)}
+.c.det{gap:6px} .c.det .ic{width:calc(min(24cqh,18cqw) * var(--hv-isz,1));height:calc(min(24cqh,18cqw) * var(--hv-isz,1))} .c.det .ic ha-state-icon,.c.det .ic ha-icon{--mdc-icon-size:calc(min(21cqh,16cqw) * var(--hv-isz,1));width:calc(min(21cqh,16cqw) * var(--hv-isz,1));height:calc(min(21cqh,16cqw) * var(--hv-isz,1))}
+:host([floor]) .d{font-size:max(10px,min(8.6cqh,7cqw))} :host([floor]) .c.det .ic{width:calc(min(24cqh,22cqw) * var(--hv-isz,1));height:calc(min(24cqh,22cqw) * var(--hv-isz,1))} :host([floor]) .c.det .ic ha-state-icon,:host([floor]) .c.det .ic ha-icon{--mdc-icon-size:calc(min(21cqh,19cqw) * var(--hv-isz,1));width:calc(min(21cqh,19cqw) * var(--hv-isz,1));height:calc(min(21cqh,19cqw) * var(--hv-isz,1))}
 /* button layout = native button card as styled by HomeView (scenes) */
 .c.btn{gap:0;justify-content:center;padding:7cqh 5cqw 8cqh}
 .c.btn .ic{flex:1;width:min(30cqh,20cqw);height:auto;max-height:80%}
@@ -532,6 +532,7 @@ class HVBase extends HTMLElement {
     this._root.innerHTML = `<div class="c ${v.layout === 'button' ? 'btn' : ''}"><div class="ic"></div><div class="tx">
       ${v.name !== '' ? `<div class="p">${esc(v.name)}</div>` : ''}${v.secondary != null && v.secondary !== '' ? `<div class="s">${esc(v.secondary)}</div>` : ''}${(v.details || []).map(d => `<div class="d"><span class="dn">${esc(d.n)}</span><span class="dv">${esc(d.v)}</span></div>`).join('')}</div></div>`;
     this._root.firstElementChild.classList.toggle('det', !!(v.details && v.details.length));
+    { const z = parseFloat(this._config.icon_size); if (z > 0) this._root.firstElementChild.style.setProperty('--hv-isz', String(Math.max(0.6, Math.min(z, 1.6)))); else this._root.firstElementChild.style.removeProperty('--hv-isz'); } // 1.5.23
     const ic = this._root.querySelector('.ic');
     if (s || !v.icon) { const i = document.createElement('ha-state-icon'); i.hass = this._hass; i.stateObj = s; if (v.icon) i.icon = v.icon; ic.appendChild(i); }
     else { const i = document.createElement('ha-icon'); i.icon = v.icon; ic.appendChild(i); }
@@ -1040,7 +1041,7 @@ const COLORS = { type: 'expandable', name: '', flatten: true, title: 'Colours (o
 const ACTIONS = (tap, hold) => ({ type: 'expandable', name: '', flatten: true, title: 'Interactions', icon: 'mdi:gesture-tap', schema: [
   { name: 'tap_action', selector: ACT(tap) }, { name: 'hold_action', selector: ACT(hold) }] });
 const LABELS = { entity: 'Entity', entities: 'Entities', name: 'Name', room: 'Room / subtitle', step: 'Set-point step', icon: 'Icon', label: 'Sub-label (overrides state)',
-  attribute: 'Show attribute instead of state', show_state: 'Show state', active: 'Lavender "active" tint', layout: 'Style (tile or button)', compact: 'Compact (1x1 tile)', show_humidity: 'Show humidity', show_status: 'Show heating / current temperature on small tiles too', humidity_entity: 'Humidity sensor (empty = the thermostat\'s own)',
+  attribute: 'Show attribute instead of state', show_state: 'Show state', active: 'Lavender "active" tint', layout: 'Style (tile or button)', compact: 'Compact (1x1 tile)', show_humidity: 'Show humidity', icon_size: 'Icon size with details lines (1 = normal)', show_status: 'Show heating / current temperature on small tiles too', humidity_entity: 'Humidity sensor (empty = the thermostat\'s own)',
   text_color: 'Text colour (CSS)', icon_color: 'Icon colour (CSS)', accent_color: 'Active / accent tint (CSS)', background_color: 'Background tint (CSS)',
   tap_action: 'Tap action', hold_action: 'Hold action', confirm: 'Ask for confirmation', confirm_text: 'Confirmation text', show_media: 'Show now playing',
   show_artist: 'Show artist', unit: 'Word after the count (e.g. "on", "lights on")', none_label: 'Text when none are on',
@@ -1064,6 +1065,7 @@ HVEntityCard.schema = ENTITY_SCHEMA(null, 'more-info', 'more-info', [
   { type: 'grid', name: '', schema: [{ name: 'label', selector: { text: {} } }, { name: 'attribute', selector: { attribute: {} }, context: { filter_entity: 'entity' } }] },
   { name: 'empty_label', selector: { text: {} } },
   { type: 'grid', name: '', schema: [{ name: 'show_humidity', selector: { boolean: {} } }, { name: 'humidity_entity', selector: { entity: { domain: 'sensor', device_class: 'humidity' } } }] },
+  { name: 'icon_size', selector: { number: { min: 0.6, max: 1.6, step: 0.05, mode: 'slider' } } },
   { name: 'details', selector: { object: { multiple: true, label_field: 'name', description_field: 'entity', fields: {
     entity: { label: 'Entity (e.g. its power or energy sensor)', required: true, selector: { entity: {} } },
     name: { label: 'Name (empty = the entity name without the tile name, e.g. "Energy")', selector: { text: {} } },

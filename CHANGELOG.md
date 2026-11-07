@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.23 – 2026-11-07
+
+### New features
+* **Entity tile: `icon_size`** (0.6–1.6, editor: *Icon size with details lines*) makes the icon bigger or smaller on tiles with
+  details lines (energy / power, thermostat Now / Humidity). 1.3 suits a 3×2 tile with two lines.
+
 ## 1.5.22 – 2026-11-07
 
 ### Changes
