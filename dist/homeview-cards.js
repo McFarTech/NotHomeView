@@ -3,7 +3,7 @@
  *         homeview-group-card, homeview-scene-card, homeview-music-card, homeview-nav-card, homeview-edit-button-card
  *  Every card has a visual editor (ha-form). Look = HomeView glass tiles; colours come from the
  *  HomeView CSS variables (--hv-*) set by the HomeView theme / style helper, with glass fall-backs. */
-const HV_VERSION = '1.5.23';
+const HV_VERSION = '1.5.24';
 // Registered colour properties so a scene background written as linear-gradient(var(--hv-bg-top), var(--hv-bg-bottom))
 // can fade smoothly between scenes (plain gradients can't transition). Unused unless a dashboard style sets them.
 try { if (window.CSS && CSS.registerProperty) for (const n of ['--hv-bg-top', '--hv-bg-bottom'])
@@ -306,6 +306,12 @@ const hvThemeOf = el => { let own = hvOwnTheme(el), n = el;
   for (let i = 0; !own && n && i < 8; i++) { if (n.isConnected && n._hvBox === undefined) n._hvBox = hvBoxOf(n); n = n._hvBox; if (n) own = hvOwnTheme(n); }
   return own ? hvMode(own, (el && el._hass) || HVT.hass) : (HVT.over ? hvMode(HVT.over, HVT.hass) : HVT.cur); };
 const hvPopupOf = el => { let n = el; for (let i = 0; i < 40 && n; i++) { if (n.tagName === 'BROWSER-MOD-POPUP') return n; n = n.parentNode || n.host; } return null; };
+// 1.5.24: a tile's day_light (white glass while the sun is up) only counts when the device pages theme is Auto; Night (or nothing
+// set, which is Night) keeps every tile dark. The setting is the tile's own Page Grid / Home Screen's, else the dashboard's.
+const hvThemeSetting = el => { let own = hvOwnTheme(el), n = el;
+  for (let i = 0; !own && n && i < 8; i++) { if (n.isConnected && n._hvBox === undefined) n._hvBox = hvBoxOf(n); n = n._hvBox; if (n) own = hvOwnTheme(n); }
+  return own || HVT.over || HVT.t || ''; };
+const hvDayLightOk = el => { try { return ['auto', 'day'].includes(hvThemeSetting(el)); } catch (e) { return true; } };
 function hvThemeApply(el) {
   const day = hvThemeOf(el) === 'day';
   if (el.isConnected && el._hvPop === undefined) el._hvPop = hvPopupOf(el);
@@ -522,7 +528,7 @@ class HVBase extends HTMLElement {
     set('--hv-border-on', c.accent_color ? 'transparent' : '');
     set('--hv-aspect', c.aspect ? String(c.aspect) : '');
     const sun = this._hass && this._hass.states['sun.sun'];
-    this.toggleAttribute('day', !!(c.day_light && sun && sun.state === 'above_horizon'));
+    this.toggleAttribute('day', !!(c.day_light && sun && sun.state === 'above_horizon' && hvDayLightOk(this)));
   }
   // tile body; subclasses provide view() => {icon, stateObj, name, secondary, active, layout}
   update() {
@@ -4289,7 +4295,7 @@ class HVChipsCard extends HTMLElement {
   _render() {
     if (!this._config || !this._hass) return;
     const c = this._config, sun = this._hass.states['sun.sun'];
-    this.toggleAttribute('day', !!(c.day_light && sun && sun.state === 'above_horizon'));
+    this.toggleAttribute('day', !!(c.day_light && sun && sun.state === 'above_horizon' && hvDayLightOk(this)));
     const views = c.chips.map(ch => this._view(ch));
     const sig = JSON.stringify([views.map(v => [v.name, v.val, v.on, v.unavailable, v.s && v.s.attributes.icon]), c.chips.map(x => x.icon || ''), this._hass.locale && this._hass.locale.language]);
     if (sig === this._sig && this._row) return; this._sig = sig;

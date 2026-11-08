@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.24 – 2026-11-08
+
+### Fixes
+* **Night really is dark.** A tile's or chip bar's *Light style while the sun is up* (`day_light`) now only applies when the device
+  pages theme is Auto (or Day). With Night, or no theme set, every tile stays dark glass, so old dashboards with `day_light: true`
+  on every tile no longer turn white in the daytime.
+
 ## 1.5.23 – 2026-11-07
 
 ### New features
